@@ -220,6 +220,7 @@
 (def parser
   (insta/parser
    "
+   PROGRAM     = STATEMENT+
    STATEMENT   = SPACE* lhs assign-op rhs <';'>+ SPACE*
    <assign-op> = '=' | '+=' | '-=' | '*=' | '/=' | '%='
    <lhs>       = SPACE* SYMBOL SPACE*
@@ -248,7 +249,7 @@
    <SPACE>     = <#'[ \t\n]+'>
    "))
 
-(defn parse-line
+(defn parse-program
   [input]
   (let [parsed (parser input)]
     (if (insta/failure? parsed)
@@ -258,7 +259,7 @@
 
 (defn parse
   [input]
-  (map parse-line (pre-parse input)))
+  (parse-program (reduce str (pre-parse input))))
 
 (defn correct-basevar
   [x]
@@ -334,9 +335,10 @@
     rkeys))
 
 (defn analyze
-  ([ps] (analyze ps nil))
-  ([ps rkeys?]
-   (let [symmaps (map analyze-line ps)
+  ([p] (analyze p nil))
+  ([p rkeys?]
+   (let [[f & r] p
+         symmaps (map analyze-line r)
          lhs-symbs (vec (map :lhs symmaps))
          rhs-symbs (reduce
                     #(into %1 (%2 :rhs))
@@ -354,7 +356,7 @@
       :rkeys rkeys
       :user-vars user-vars})))
 
-(defn emit-line
+(defn emit
   [l]
   (let [[f & r] l
         basic-op (fn [r]
@@ -368,26 +370,27 @@
                      (str ({"/" "div"
                             "%" "mod"
                             "|" "bitor"
-                            "&" "bitand"} op) "(" (when lhs-neg "-") (emit-line lhs) "," (when rhs-neg "-") (emit-line rhs) ")")
-                        (str "(" (when lhs-neg "-") (emit-line lhs) op (when rhs-neg "-") (emit-line rhs) ")"))))]
+                            "&" "bitand"} op) "(" (when lhs-neg "-") (emit lhs) "," (when rhs-neg "-") (emit rhs) ")")
+                        (str "(" (when lhs-neg "-") (emit lhs) op (when rhs-neg "-") (emit rhs) ")"))))]
     (case f
+      :PROGRAM (map emit r)
       :STATEMENT (let [[rhs-neg r] (if (> (count r) 3)
                                      (remove-trailing-negs r)
                                      [nil r])
                        [lhs op rhs] r]
-                   (str (emit-line lhs) " " op " " (when rhs-neg "-") (emit-line rhs) ";"))
+                   (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) ";"))
       :bitwise (basic-op r)
       :add-sub (basic-op r)
       :mult-div (basic-op r)
       :NUMBER (if (and (> (count r) 1) ;; only put a negative sign if there is an odd number of them
                        (zero? (mod (count r) 2)))
-                (str "-" (emit-line (last r)))
-                (emit-line (last r)))
+                (str "-" (emit (last r)))
+                (emit (last r)))
       :DECIMAL (if (== (count r) 3)
                  (let [[lhs _ rhs] r]
-                   (str (emit-line lhs) "." (emit-line rhs)))
+                   (str (emit lhs) "." (emit rhs)))
                  (let [[_ rhs] r]
-                   (str "0." (emit-line rhs))))
+                   (str "0." (emit rhs))))
       :INTEGER (first r)
       :SYMBOL (let [sname (last r)
                     sname (correct-basevar sname)]
@@ -399,11 +402,7 @@
                      [fname & args] r
                      [is-neg fname] (remove-leading-negs (rest fname))
                      f (funmap (keyword (.toLowerCase (first fname))))
-                     as (reduce str (interpose ", " (map emit-line args)))]
+                     as (reduce str (interpose ", " (map emit args)))]
                  (if (nil? f)
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
                    (str (when (or is-neg-top is-neg) "-") f "(" as ")"))))))
-
-(defn emit
-  [ls]
-  (reduce #(str %1 "\n" %2) (map emit-line ls)))
