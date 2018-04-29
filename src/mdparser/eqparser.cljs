@@ -423,7 +423,7 @@
                             "&" "bitand"} op) "(" (when lhs-neg "-") (emit lhs) "," (when rhs-neg "-") (emit rhs) ")")
                         (str "(" (when lhs-neg "-") (emit lhs) op (when rhs-neg "-") (emit rhs) ")"))))]
     (case f
-      :PROGRAM (map emit r)
+      :PROGRAM (reduce str (map emit r))
       :STATEMENT (if (== (count r) 1)
                    (emit (first r))
                    (let [[rhs-neg r] (if (> (count r) 3)
