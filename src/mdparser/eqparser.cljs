@@ -435,8 +435,8 @@
                      (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) line-ending)))
       (:exec2 :exec3) (str
                         "(function () {"
-                        (reduce str (map #(emit % ",") (drop-last r)))
-                        "return " (emit (last r) "")
+                        (reduce str (map #(emit %) (drop-last r)))
+                        "return " (emit (last r))
                         "})()")
       :while (let [idx-var (gensym "mdparser_idx")
                    count-var (gensym "mdparser_count")]
