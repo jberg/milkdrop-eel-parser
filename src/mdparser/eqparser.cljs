@@ -31,9 +31,7 @@
    :band "band"
    :equal "equal"
    :above "above"
-   :below "below"
-   ;ternary
-   :if "ifcond"})
+   :below "below"})
 
 (def varmap
   {:frating :rating
@@ -221,30 +219,36 @@
   (insta/parser
    "
    PROGRAM     = STATEMENT+
-   STATEMENT   = SPACE* lhs assign-op rhs <';'>+ SPACE*
+   STATEMENT   = SPACE* ((lhs assign-op rhs) | loop | while | if) <';'>* SPACE*
+   exec3       = <'exec3'> lparen STATEMENT+ <comma> STATEMENT+ <comma> STATEMENT+ rparen
+   exec2       = <'exec2'> lparen STATEMENT+ <comma> STATEMENT+ rparen
+   loop        = <'loop'> lparen bitexpr comma STATEMENT+ rparen
+   while       = <'while'> lparen (exec3 | exec2) rparen
    <assign-op> = '=' | '+=' | '-=' | '*=' | '/=' | '%='
-   <lhs>       = SPACE* SYMBOL SPACE*
+   <lhs>       = BUFFER | SYMBOL
    <rhs>       = SPACE* bitexpr SPACE*
-   <bitexpr>      = expr | bitwise
+   <bitexpr>   = loop | cond | BUFFER | expr | bitwise
    <expr>      = term | add-sub
    <term>      = factor | mult-div
-   <factor>    = NUMBER | SYMBOL | funcall | tern | SPACE* NEGATIVE* lparen bitexpr rparen
+   <factor>    = NUMBER | SYMBOL | BUFFER | if | funcall | SPACE* NEGATIVE* lparen bitexpr rparen
    bitwise     = bitexpr bitop expr
    add-sub     = expr addop term
    mult-div    = term multop factor
    <bitop>     = '&' | '|'
    <addop>     = '+' | '-'
    <multop>    = '/' | '*' | '%'
-   funcall     = SPACE* NEGATIVE* SYMBOL lparen bitexpr (<','> bitexpr)* rparen
-   tern        = SPACE* cond <'?'> bitexpr <':'> bitexpr SPACE*
-   cond        = bitexpr | lparen* bitexpr condop bitexpr rparen*
+   if          = SPACE* NEGATIVE* SPACE* <'if'> lparen bitexpr comma (STATEMENT | exec3 | exec2 | bitexpr)+ comma (STATEMENT | exec3 | exec2 | bitexpr)+ rparen
+   funcall     = SPACE* NEGATIVE* SYMBOL lparen bitexpr (<comma> bitexpr)* rparen
+   cond        = lparen* bitexpr condop bitexpr rparen*
    condop      = '>' | '<' | '>=' | '<=' | '==' | '!='
    <lparen>    = SPACE* <'('> SPACE*
    <rparen>    = SPACE* <')'> SPACE*
+   comma       = SPACE* <','> SPACE*
    NUMBER      = SPACE* NEGATIVE* (DECIMAL | INTEGER) SPACE*
    DECIMAL     = INTEGER? '.' INTEGER
    INTEGER     = #'[0-9]+'
-   SYMBOL      = SPACE* NEGATIVE* #'[A-Za-z][A-Za-z0-9_]*' SPACE*
+   SYMBOL      = SPACE* NEGATIVE* SPACE* #'[A-Za-z][A-Za-z0-9_]*' SPACE*
+   BUFFER      = SPACE* NEGATIVE* SPACE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen SPACE*
    NEGATIVE    = <'-'>
    <SPACE>     = <#'[ \t\n]+'>
    "))
@@ -357,7 +361,8 @@
       :user-vars user-vars})))
 
 (defn emit
-  [l]
+  ([l] (emit l ";"))
+  ([l line-ending]
   (let [[f & r] l
         basic-op (fn [r]
                    (let [[lhs-neg r] (remove-leading-negs r)
@@ -374,30 +379,68 @@
                         (str "(" (when lhs-neg "-") (emit lhs) op (when rhs-neg "-") (emit rhs) ")"))))]
     (case f
       :PROGRAM (map emit r)
-      :STATEMENT (let [[rhs-neg r] (if (> (count r) 3)
-                                     (remove-trailing-negs r)
-                                     [nil r])
-                       [lhs op rhs] r]
-                   (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) ";"))
+      :STATEMENT (if (== (count r) 1)
+                   (emit (first r))
+                   (let [[rhs-neg r] (if (> (count r) 3)
+                                       (remove-trailing-negs r)
+                                       [nil r])
+                         [lhs op rhs] r]
+                     (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) line-ending)))
+      (:exec2 :exec3) (str
+                        "("
+                        (reduce str (map #(emit % ",") (drop-last r)))
+                        (emit (last r) "")
+                        ")")
+      :while (let [idx-var (gensym "idx")
+                   count-var (gensym "count")]
+               (str
+                 "var " idx-var ";"
+                 "var " count-var  "=0;"
+                 "do {"
+                 count-var " += 1;"
+                 idx-var " = " (reduce str (map #(emit % "") r))
+                 "} while (" idx-var " !== 0 && " count-var " < 1048576);"))
+      :loop (let [[c comma & s] r
+                  idx-var (gensym "idx")
+                  idx-max-var (gensym "idx_max")]
+              (str
+                "var " idx-max-var " = " (emit c) ";"
+                "for (var " idx-var " = 0; " idx-var " < " idx-max-var "; "idx-var "++) {"
+                (reduce str (map emit s))
+                "}"))
       :bitwise (basic-op r)
       :add-sub (basic-op r)
       :mult-div (basic-op r)
-      :NUMBER (if (and (> (count r) 1) ;; only put a negative sign if there is an odd number of them
-                       (zero? (mod (count r) 2)))
-                (str "-" (emit (last r)))
-                (emit (last r)))
+      :NUMBER (let [[is-neg r] (remove-leading-negs r)]
+                (str (when is-neg "-") (emit (last r))))
       :DECIMAL (if (== (count r) 3)
                  (let [[lhs _ rhs] r]
                    (str (emit lhs) "." (emit rhs)))
                  (let [[_ rhs] r]
                    (str "0." (emit rhs))))
       :INTEGER (first r)
-      :SYMBOL (let [sname (last r)
+      :SYMBOL (let [[is-neg r] (remove-leading-negs r)
+                    sname (last r)
                     sname (correct-basevar sname)]
-                (if (and (> (count r) 1)
-                         (zero? (mod (count r) 2)))
-                  (str "-m." sname)
-                  (str "m." sname)))
+                (str (when is-neg "-") "m." sname))
+      :BUFFER (let [[is-neg r] (remove-leading-negs r)]
+                (str (when is-neg "-") "m." (first r) "[" (emit (second r)) "]"))
+      :condop (last r)
+      :cond (let [[lhs c rhs] r]
+              (str
+                "("
+                (emit lhs)
+                (emit c)
+                (emit rhs)
+                ")"))
+      :if (let [[is-neg r] (remove-leading-negs r)
+                [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
+            (str
+              (when is-neg "-")
+              "(" (emit (first c)) ") ? "
+              "(" (reduce str (map emit t)) ") "
+              ": "
+              "(" (reduce str (map emit f)) ")"))
       :funcall (let [[is-neg-top r] (remove-leading-negs r)
                      [fname & args] r
                      [is-neg fname] (remove-leading-negs (rest fname))
@@ -405,4 +448,4 @@
                      as (reduce str (interpose ", " (map emit args)))]
                  (if (nil? f)
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
-                   (str (when (or is-neg-top is-neg) "-") f "(" as ")"))))))
+                   (str (when (or is-neg-top is-neg) "-") f "(" as ")")))))))
