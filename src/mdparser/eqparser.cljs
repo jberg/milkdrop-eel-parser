@@ -434,10 +434,10 @@
                          [lhs op rhs] r]
                      (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) line-ending)))
       (:exec2 :exec3) (str
-                        "("
+                        "(function () {"
                         (reduce str (map #(emit % ",") (drop-last r)))
-                        (emit (last r) "")
-                        ")")
+                        "return " (emit (last r) "")
+                        "})()")
       :while (let [idx-var (gensym "idx")
                    count-var (gensym "count")]
                (str
