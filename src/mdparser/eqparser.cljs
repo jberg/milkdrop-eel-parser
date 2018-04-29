@@ -31,9 +31,7 @@
    :band "band"
    :equal "equal"
    :above "above"
-   :below "below"
-   ;ternary
-   :if "ifcond"})
+   :below "below"})
 
 (def varmap
   {:frating :rating
