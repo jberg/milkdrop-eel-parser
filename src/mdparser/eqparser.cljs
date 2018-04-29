@@ -247,8 +247,9 @@
    <rparen>    = <')'>
    comma       = <','>
    NUMBER      = NEGATIVE* (DECIMAL | INTEGER)
-   DECIMAL     = INTEGER? '.' INTEGER
-   INTEGER     = #'[0-9]+'
+   DECIMAL     = DIGITS? '.' DIGITS
+   INTEGER     = DIGITS !'.'
+   <DIGITS>    = #'\\d+'
    SYMBOL      = NEGATIVE* #'[A-Za-z][A-Za-z0-9_]*'
    BUFFER      = NEGATIVE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen
    NEGATIVE    = <'-'>
@@ -460,9 +461,9 @@
                 (str (when is-neg "-") (emit (last r))))
       :DECIMAL (if (== (count r) 3)
                  (let [[lhs _ rhs] r]
-                   (str (emit lhs) "." (emit rhs)))
+                   (str lhs "." rhs))
                  (let [[_ rhs] r]
-                   (str "0." (emit rhs))))
+                   (str "0." rhs)))
       :INTEGER (first r)
       :SYMBOL (let [[is-neg r] (remove-leading-negs r)
                     sname (last r)
