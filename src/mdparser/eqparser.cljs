@@ -265,7 +265,9 @@
 
 (defn parse
   [input]
-  (parse-program (reduce str (pre-parse input))))
+  (let [pre-parse-input (reduce str (pre-parse input))]
+    (when (not (clojure.string/blank? pre-parse-input))
+      (parse-program pre-parse-input))))
 
 (defn correct-basevar
   [x]
