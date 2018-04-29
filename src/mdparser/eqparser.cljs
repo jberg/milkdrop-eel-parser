@@ -259,7 +259,7 @@
   [input]
   (let [parsed (insta/parse parser input :optimize :memory)]
     (if (insta/failure? parsed)
-      (throw (ex-info (pr-str (insta/get-failure parsed)) {}))
+      (throw (ex-info (pr-str (insta/get-failure parsed)) (clj->js {:input input})))
       (insta/transform {:SYMBOL (fn [& xs] (into [:SYMBOL] (conj (vec (drop-last xs)) (.toLowerCase (last xs)))))}
                        parsed))))
 
