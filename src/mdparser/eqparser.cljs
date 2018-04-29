@@ -229,10 +229,10 @@
    <assign-op> = '=' | '+=' | '-=' | '*=' | '/=' | '%='
    <lhs>       = BUFFER | SYMBOL
    <rhs>       = bitexpr
-   <bitexpr>   = loop | cond | BUFFER | expr | bitwise
+   <bitexpr>   = loop / cond / BUFFER / if / expr / bitwise
    <expr>      = term | add-sub
    <term>      = factor | mult-div
-   <factor>    = NUMBER | SYMBOL | BUFFER | if | funcall | NEGATIVE* lparen bitexpr rparen
+   <factor>    = (if / funcall / NUMBER / BUFFER / SYMBOL) | NEGATIVE* lparen bitexpr rparen
    bitwise     = bitexpr bitop expr
    add-sub     = expr addop term
    mult-div    = term multop factor
@@ -240,15 +240,15 @@
    <addop>     = '+' | '-'
    <multop>    = '/' | '*' | '%'
    if          = NEGATIVE* <'if'> lparen bitexpr comma (STATEMENT | exec3 | exec2 | bitexpr)+ comma (STATEMENT | exec3 | exec2 | bitexpr)+ rparen
-   funcall     = !BUFFER SYMBOL lparen bitexpr (<comma> bitexpr)* rparen
+   funcall     = SYMBOL lparen bitexpr (<comma> bitexpr)* rparen
    cond        = lparen* bitexpr condop bitexpr rparen*
    condop      = '>' | '<' | '>=' | '<=' | '==' | '!='
    <lparen>    = <'('>
    <rparen>    = <')'>
    comma       = <','>
-   NUMBER      = NEGATIVE* (DECIMAL | INTEGER)
+   NUMBER      = NEGATIVE* (DECIMAL / INTEGER)
    DECIMAL     = DIGITS? '.' DIGITS
-   INTEGER     = DIGITS !'.'
+   INTEGER     = DIGITS
    <DIGITS>    = #'\\d+'
    SYMBOL      = NEGATIVE* #'[A-Za-z][A-Za-z0-9_]*'
    BUFFER      = NEGATIVE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen
