@@ -438,8 +438,8 @@
                         (reduce str (map #(emit % ",") (drop-last r)))
                         "return " (emit (last r) "")
                         "})()")
-      :while (let [idx-var (gensym "idx")
-                   count-var (gensym "count")]
+      :while (let [idx-var (gensym "mdparser_idx")
+                   count-var (gensym "mdparser_count")]
                (str
                  "var " idx-var ";"
                  "var " count-var  "=0;"
@@ -448,7 +448,7 @@
                  idx-var " = " (reduce str (map #(emit % "") r))
                  "} while (" idx-var " !== 0 && " count-var " < 1048576);"))
       :loop (let [[c comma & s] r
-                  idx-var (gensym "idx")]
+                  idx-var (gensym "mdparser_idx")]
               (str
                 "for (var " idx-var " = 0; " idx-var " < " (emit c) "; "idx-var "++) {"
                 (reduce str (map emit s))
