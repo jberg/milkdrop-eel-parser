@@ -448,11 +448,9 @@
                  idx-var " = " (reduce str (map #(emit % "") r))
                  "} while (" idx-var " !== 0 && " count-var " < 1048576);"))
       :loop (let [[c comma & s] r
-                  idx-var (gensym "idx")
-                  idx-max-var (gensym "idx_max")]
+                  idx-var (gensym "idx")]
               (str
-                "var " idx-max-var " = " (emit c) ";"
-                "for (var " idx-var " = 0; " idx-var " < " idx-max-var "; "idx-var "++) {"
+                "for (var " idx-var " = 0; " idx-var " < " (emit c) "; "idx-var "++) {"
                 (reduce str (map emit s))
                 "}"))
       :bitwise (basic-op r)
