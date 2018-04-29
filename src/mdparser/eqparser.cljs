@@ -221,43 +221,43 @@
   (insta/parser
    "
    PROGRAM     = STATEMENT+
-   STATEMENT   = SPACE* ((lhs assign-op rhs) | loop | while | if) <';'>* SPACE*
+   STATEMENT   = ((lhs assign-op rhs) | loop | while | if) <';'>*
    exec3       = <'exec3'> lparen STATEMENT+ <comma> STATEMENT+ <comma> STATEMENT* bitexpr* rparen
    exec2       = <'exec2'> lparen STATEMENT+ <comma> STATEMENT* bitexpr* rparen
    loop        = <'loop'> lparen bitexpr comma STATEMENT+ rparen
    while       = <'while'> lparen (exec3 | exec2) rparen
    <assign-op> = '=' | '+=' | '-=' | '*=' | '/=' | '%='
    <lhs>       = BUFFER | SYMBOL
-   <rhs>       = SPACE* bitexpr SPACE*
+   <rhs>       = bitexpr
    <bitexpr>   = loop | cond | BUFFER | expr | bitwise
    <expr>      = term | add-sub
    <term>      = factor | mult-div
-   <factor>    = NUMBER | SYMBOL | BUFFER | if | funcall | SPACE* NEGATIVE* lparen bitexpr rparen
+   <factor>    = NUMBER | SYMBOL | BUFFER | if | funcall | NEGATIVE* lparen bitexpr rparen
    bitwise     = bitexpr bitop expr
    add-sub     = expr addop term
    mult-div    = term multop factor
    <bitop>     = '&' | '|'
    <addop>     = '+' | '-'
    <multop>    = '/' | '*' | '%'
-   if          = SPACE* NEGATIVE* SPACE* <'if'> lparen bitexpr comma (STATEMENT | exec3 | exec2 | bitexpr)+ comma (STATEMENT | exec3 | exec2 | bitexpr)+ rparen
-   funcall     = SPACE* NEGATIVE* SYMBOL lparen bitexpr (<comma> bitexpr)* rparen
+   if          = NEGATIVE* <'if'> lparen bitexpr comma (STATEMENT | exec3 | exec2 | bitexpr)+ comma (STATEMENT | exec3 | exec2 | bitexpr)+ rparen
+   funcall     = !BUFFER SYMBOL lparen bitexpr (<comma> bitexpr)* rparen
    cond        = lparen* bitexpr condop bitexpr rparen*
    condop      = '>' | '<' | '>=' | '<=' | '==' | '!='
-   <lparen>    = SPACE* <'('> SPACE*
-   <rparen>    = SPACE* <')'> SPACE*
-   comma       = SPACE* <','> SPACE*
-   NUMBER      = SPACE* NEGATIVE* (DECIMAL | INTEGER) SPACE*
+   <lparen>    = <'('>
+   <rparen>    = <')'>
+   comma       = <','>
+   NUMBER      = NEGATIVE* (DECIMAL | INTEGER)
    DECIMAL     = INTEGER? '.' INTEGER
    INTEGER     = #'[0-9]+'
-   SYMBOL      = SPACE* NEGATIVE* SPACE* #'[A-Za-z][A-Za-z0-9_]*' SPACE*
-   BUFFER      = SPACE* NEGATIVE* SPACE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen SPACE*
+   SYMBOL      = NEGATIVE* #'[A-Za-z][A-Za-z0-9_]*'
+   BUFFER      = NEGATIVE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen
    NEGATIVE    = <'-'>
-   <SPACE>     = <#'[ \t\n]+'>
-   "))
+   "
+   :auto-whitespace :standard))
 
 (defn parse-program
   [input]
-  (let [parsed (parser input)]
+  (let [parsed (insta/parse parser input :optimize :memory)]
     (if (insta/failure? parsed)
       (throw (ex-info (pr-str (insta/get-failure parsed)) {}))
       (insta/transform {:SYMBOL (fn [& xs] (into [:SYMBOL] (conj (vec (drop-last xs)) (.toLowerCase (last xs)))))}
