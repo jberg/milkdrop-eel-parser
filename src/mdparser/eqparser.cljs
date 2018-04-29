@@ -31,7 +31,9 @@
    :band "band"
    :equal "equal"
    :above "above"
-   :below "below"})
+   :below "below"
+   ;ternary
+   :if "ifcond"})
 
 (def varmap
   {:frating :rating
@@ -220,8 +222,8 @@
    "
    PROGRAM     = STATEMENT+
    STATEMENT   = SPACE* ((lhs assign-op rhs) | loop | while | if) <';'>* SPACE*
-   exec3       = <'exec3'> lparen STATEMENT+ <comma> STATEMENT+ <comma> STATEMENT+ rparen
-   exec2       = <'exec2'> lparen STATEMENT+ <comma> STATEMENT+ rparen
+   exec3       = <'exec3'> lparen STATEMENT+ <comma> STATEMENT+ <comma> STATEMENT* bitexpr* rparen
+   exec2       = <'exec2'> lparen STATEMENT+ <comma> STATEMENT* bitexpr* rparen
    loop        = <'loop'> lparen bitexpr comma STATEMENT+ rparen
    while       = <'while'> lparen (exec3 | exec2) rparen
    <assign-op> = '=' | '+=' | '-=' | '*=' | '/=' | '%='
@@ -289,17 +291,51 @@
 (defn analyze-line
   [l]
   (let [[f & r] l
-        [rhs-neg r] (if (> (count r) 3)
-                      (remove-trailing-negs r)
-                      [nil r])
-        [lhs op rhs] r
-        lhs-symb (last lhs)
-        lhs-symb (correct-basevar lhs-symb)
-        rhs-symbs (get-symbols rhs)
-        rhs-symbs (filter #(nil? (funmap (keyword %))) rhs-symbs) ;don't need function symbols
-        rhs-symbs (set (map correct-basevar rhs-symbs))]
-    {:lhs lhs-symb
-     :rhs rhs-symbs}))
+        [lhs-neg r] (remove-leading-negs r)
+        [rhs-neg r] (remove-trailing-negs r)]
+    (if (> (count r) 1)
+      (let [[lhs op rhs] r
+            lhs-symbs (if (= (first lhs) :BUFFER)
+                        []
+                        [(correct-basevar (last lhs))])
+            rhs-symbs (if (= (first lhs) :BUFFER)
+                        (into (get-symbols rhs) (get-symbols lhs))
+                        (get-symbols rhs))
+            rhs-symbs (filter #(nil? (funmap (keyword %))) rhs-symbs) ;don't need function symbols
+            rhs-symbs (set (map correct-basevar rhs-symbs))]
+        {:lhs lhs-symbs
+         :rhs rhs-symbs})
+      (case (first (first r))
+        :loop (let [[c comma & s] (rest (first r))]
+                (reduce
+                  (fn [coll a]
+                    {:lhs (into (coll :lhs) (a :lhs))
+                     :rhs (into (coll :rhs) (a :rhs))})
+                  {:lhs []
+                   :rhs (into #{} (get-symbols c))}
+                  (map analyze-line s)))
+        :while (reduce
+                (fn [coll a]
+                  {:lhs (into (coll :lhs) (a :lhs))
+                   :rhs (into (coll :rhs) (a :rhs))})
+                {:lhs []
+                 :rhs #{}}
+                (map #(if (= (first %) :STATEMENT)
+                        (analyze-line %)
+                        {:lhs [] :rhs (into #{} (get-symbols %))})
+                     (rest (first (rest (first r))))))
+        :if (let [[is-neg r] (remove-leading-negs (rest (first r)))
+                  [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
+              (reduce
+                (fn [coll a]
+                  {:lhs (into (coll :lhs) (a :lhs))
+                   :rhs (into (coll :rhs) (a :rhs))})
+                {:lhs []
+                 :rhs (into #{} (get-symbols c))}
+                (map #(if (= (first %) :STATEMENT)
+                        (analyze-line %)
+                        {:lhs [] :rhs (into #{} (get-symbols %))})
+                     (into t f))))))))
 
 (def non-rkeys #{:x :y :rad :ang})
 
@@ -309,10 +345,13 @@
   to instead of cloning the whole object."
   [lhs-symbs rhs-symbss]
   (let [lhs-first-occur (reduce
-                         (fn [c [s i]]
-                           (if (nil? (c s))
-                             (assoc c s i)
-                             c))
+                         (fn [c [ss i]]
+                           (reduce
+                            #(if (nil? (%1 %2))
+                               (assoc %1 %2 i)
+                               %1)
+                            c
+                            ss))
                          {}
                          (map vector lhs-symbs (range)))
         rhs-first-occur (reduce
@@ -343,18 +382,24 @@
   ([p rkeys?]
    (let [[f & r] p
          symmaps (map analyze-line r)
-         lhs-symbs (vec (map :lhs symmaps))
-         rhs-symbs (reduce
-                    #(into %1 (%2 :rhs))
-                    #{}
-                    symmaps)
+         lhs-symbs (mapv :lhs symmaps)
+         rhs-symbs (mapv :rhs symmaps)
+         rkeys (when rkeys? (get-rewrite-keys lhs-symbs rhs-symbs))
          basevars (if rkeys?
                     (if (= :per-pixel rkeys?)
                       (into basevarset (pool-vars rkeys?))
                       (into globalvarset (pool-vars rkeys?)))
                     basevarset)
-         user-vars (filter #(nil? (basevars (keyword %))) (into rhs-symbs lhs-symbs))
-         rkeys (when rkeys? (get-rewrite-keys lhs-symbs (map :rhs symmaps)))]
+         user-vars (into
+                     (reduce
+                       #(into %1 (%2 :lhs))
+                       #{}
+                       symmaps)
+                     (reduce
+                       #(into %1 (%2 :rhs))
+                       #{}
+                       symmaps))
+         user-vars (filter #(nil? (basevars (keyword %))) user-vars)]
      {:lhs lhs-symbs
       :rhs rhs-symbs
       :rkeys rkeys
