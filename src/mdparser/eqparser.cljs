@@ -307,6 +307,15 @@
         {:lhs lhs-symbs
          :rhs rhs-symbs})
       (case (first (first r))
+        (:bitwise
+         :add-sub
+         :mult-div) (let [[lhs-neg r] (remove-leading-negs (rest (first r)))
+                          [rhs-neg r] (remove-trailing-negs r)
+                          [lhs op rhs] r
+                          lhssymbs (get-symbols lhs)
+                          rhssymbs (get-symbols rhs)]
+                      {:lhs []
+                       :rhs (into (into #{} lhssymbs) rhssymbs)})
         :loop (let [[c comma & s] (rest (first r))]
                 (reduce
                   (fn [coll a]
