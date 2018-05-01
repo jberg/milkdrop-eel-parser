@@ -336,7 +336,16 @@
                 (map #(if (= (first %) :STATEMENT)
                         (analyze-line %)
                         {:lhs [] :rhs (into #{} (get-symbols %))})
-                     (into t f))))))))
+                     (into t f))))
+        :funcall (let [[is-neg-top r] (remove-leading-negs (rest (first r)))
+                       [fname & args] r]
+                   (reduce
+                     (fn [coll a]
+                       {:lhs (into (coll :lhs) (a :lhs))
+                        :rhs (into (coll :rhs) (a :rhs))})
+                     {:lhs []
+                      :rhs #{}}
+                     (map #(hash-map :lhs [] :rhs (into #{} (get-symbols %))) args)))))))
 
 (def non-rkeys #{:x :y :rad :ang})
 
