@@ -230,7 +230,7 @@
    <bitexpr>   = loop / cond / BUFFER / if / expr / bitwise
    <expr>      = term | add-sub
    <term>      = factor | mult-div
-   <factor>    = (if / funcall / NUMBER / BUFFER / SYMBOL) | NEGATIVE* lparen bitexpr rparen
+   <factor>    = (if / BUFFER / funcall / NUMBER / SYMBOL) | NEGATIVE* lparen bitexpr rparen
    bitwise     = bitexpr bitop expr
    add-sub     = expr addop term
    mult-div    = term multop factor
