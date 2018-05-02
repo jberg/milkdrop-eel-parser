@@ -244,7 +244,7 @@
    <lparen>    = <'('>
    <rparen>    = <')'>
    comma       = <','>
-   NUMBER      = NEGATIVE* (DECIMAL / INTEGER)
+   NUMBER      = NEGATIVE* <'+'>? (DECIMAL / INTEGER)
    DECIMAL     = (DIGITS? '.' DIGITS) | (DIGITS '.' DIGITS?)
    INTEGER     = DIGITS
    <DIGITS>    = #'\\d+'
