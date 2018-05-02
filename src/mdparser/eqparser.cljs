@@ -245,7 +245,7 @@
    <rparen>    = <')'>
    comma       = <','>
    NUMBER      = NEGATIVE* (DECIMAL / INTEGER)
-   DECIMAL     = DIGITS? '.' DIGITS
+   DECIMAL     = (DIGITS? '.' DIGITS) | (DIGITS '.' DIGITS?)
    INTEGER     = DIGITS
    <DIGITS>    = #'\\d+'
    SYMBOL      = NEGATIVE* #'[A-Za-z][A-Za-z0-9_]*'
@@ -478,8 +478,10 @@
       :DECIMAL (if (== (count r) 3)
                  (let [[lhs _ rhs] r]
                    (str lhs "." rhs))
-                 (let [[_ rhs] r]
-                   (str "0." rhs)))
+                 (let [[lhs rhs] r]
+                   (if (= lhs ".")
+                     (str "0." rhs)
+                     (str lhs ".0"))))
       :INTEGER (first r)
       :SYMBOL (let [[is-neg r] (remove-leading-negs r)
                     sname (last r)
