@@ -490,11 +490,11 @@
       :condop (last r)
       :cond (let [[lhs c rhs] r]
               (str
-                "("
+                "(("
                 (emit lhs)
                 (emit c)
                 (emit rhs)
-                ")"))
+                ") ? 1 : 0)"))
       :if (let [[is-neg r] (remove-leading-negs r)
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
