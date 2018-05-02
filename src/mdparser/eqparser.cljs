@@ -444,7 +444,7 @@
                             "&" "bitand"} op) "(" (when lhs-neg "-") (emit lhs) "," (when rhs-neg "-") (emit rhs) ")")
                         (str "(" (when lhs-neg "-") (emit lhs) op (when rhs-neg "-") (emit rhs) ")"))))]
     (case f
-      :PROGRAM (reduce str (map emit r))
+      :PROGRAM (clojure.string/join "\n" (map emit r))
       :STATEMENT (if (== (count r) 1)
                    (emit (first r))
                    (let [[rhs-neg r] (if (> (count r) 3)
@@ -454,8 +454,8 @@
                      (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) line-ending)))
       (:exec2 :exec3) (str
                         "(function () {"
-                        (reduce str (map #(emit %) (drop-last r)))
-                        "return " (emit (last r))
+                        (clojure.string/join "\n" (map #(emit %) (drop-last r)))
+                        "\nreturn " (emit (last r))
                         "})()")
       :while (let [idx-var (gensym "mdparser_idx")
                    count-var (gensym "mdparser_count")]
@@ -464,13 +464,13 @@
                  "var " count-var  "=0;"
                  "do {"
                  count-var " += 1;"
-                 idx-var " = " (reduce str (map #(emit % "") r))
+                 idx-var " = " (clojure.string/join " " (map #(emit % "") r))
                  "} while (" idx-var " !== 0 && " count-var " < 1048576);"))
       :loop (let [[c comma & s] r
                   idx-var (gensym "mdparser_idx")]
               (str
                 "for (var " idx-var " = 0; " idx-var " < " (emit c) "; "idx-var "++) {"
-                (reduce str (map emit s))
+                (clojure.string/join "\n" (map emit s))
                 "}"))
       :bitwise (basic-op r)
       :add-sub (basic-op r)
@@ -504,14 +504,14 @@
             (str
               (when is-neg "-")
               "((" (emit (first c)) " != 0) ? "
-              "(" (reduce str (map emit t)) ") "
+              "(" (clojure.string/join " " (map emit t)) ") "
               ": "
-              "(" (reduce str (map emit f)) "))"))
+              "(" (clojure.string/join " " (map emit f)) "))"))
       :funcall (let [[is-neg-top r] (remove-leading-negs r)
                      [fname & args] r
                      [is-neg fname] (remove-leading-negs (rest fname))
                      f (funmap (keyword (.toLowerCase (first fname))))
-                     as (reduce str (interpose ", " (map emit args)))]
+                     as (clojure.string/join ", " (map emit args))]
                  (if (nil? f)
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
                    (str (when (or is-neg-top is-neg) "-") f "(" as ")")))))))
