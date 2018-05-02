@@ -237,7 +237,7 @@
    <bitop>     = '&' | '|'
    <addop>     = '+' | '-'
    <multop>    = '/' | '*' | '%'
-   if          = NEGATIVE* <'if'> lparen bitexpr comma (STATEMENT | exec3 | exec2 | bitexpr)+ comma (STATEMENT | exec3 | exec2 | bitexpr)+ rparen
+   if          = NEGATIVE* <('if' | 'If' | 'IF')> lparen bitexpr comma (STATEMENT | exec3 | exec2 | bitexpr)+ comma (STATEMENT | exec3 | exec2 | bitexpr)+ rparen
    funcall     = SYMBOL lparen bitexpr (<comma> bitexpr)* rparen
    cond        = lparen* bitexpr condop bitexpr rparen*
    condop      = '>' | '<' | '>=' | '<=' | '==' | '!='
