@@ -503,10 +503,10 @@
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
               (when is-neg "-")
-              "(" (emit (first c)) " != 0) ? "
+              "((" (emit (first c)) " != 0) ? "
               "(" (reduce str (map emit t)) ") "
               ": "
-              "(" (reduce str (map emit f)) ")"))
+              "(" (reduce str (map emit f)) "))"))
       :funcall (let [[is-neg-top r] (remove-leading-negs r)
                      [fname & args] r
                      [is-neg fname] (remove-leading-negs (rest fname))
