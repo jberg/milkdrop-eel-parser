@@ -316,6 +316,7 @@
                           rhssymbs (get-symbols rhs)]
                       {:lhs []
                        :rhs (into (into #{} lhssymbs) rhssymbs)})
+        :NUMBER {:lhs [] :rhs #{}}
         :loop (let [[c comma & s] (rest (first r))]
                 (reduce
                   (fn [coll a]
