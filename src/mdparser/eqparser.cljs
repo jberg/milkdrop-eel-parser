@@ -501,7 +501,7 @@
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
               (when is-neg "-")
-              "(" (emit (first c)) ") ? "
+              "(" (emit (first c)) " != 0) ? "
               "(" (reduce str (map emit t)) ") "
               ": "
               "(" (reduce str (map emit f)) ")"))
