@@ -219,7 +219,8 @@
   (insta/parser
    "
    PROGRAM     = STATEMENT+
-   STATEMENT   = ((lhs assign-op rhs) | loop | while | if | bitexpr) <';'>*
+   STATEMENT   = ASSIGN / (bitexpr <';'>) / ((loop | while | if) <';'>?)
+   <ASSIGN>    = lhs assign-op rhs <';'>
    exec3       = <'exec3'> lparen STATEMENT+ <comma> STATEMENT+ <comma> STATEMENT* bitexpr* rparen
    exec2       = <'exec2'> lparen STATEMENT+ <comma> STATEMENT* bitexpr* rparen
    loop        = <'loop'> lparen bitexpr comma STATEMENT+ rparen
