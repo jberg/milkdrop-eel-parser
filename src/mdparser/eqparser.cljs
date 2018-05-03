@@ -431,7 +431,15 @@
 (defn emit
   ([l] (emit l ";"))
   ([l line-ending]
-  (let [[f & r] l]
+  (let [[f & r] l
+        return-last-thunk (fn [statements]
+                            (if (> (count statements) 1)
+                              (str
+                                "(function(){"
+                                (clojure.string/join "\n" (map #(emit %) (drop-last statements)))
+                                "\nreturn " (emit (last statements))
+                                "})()")
+                              (emit (first statements) "")))]
     (case f
       :PROGRAM (clojure.string/join "\n" (map emit r))
       :STATEMENT (emit (first r))
@@ -439,12 +447,8 @@
                                        (remove-trailing-negs r)
                                        [nil r])
                     [lhs op rhs] r]
-                (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) line-ending))
-      (:exec2 :exec3) (str
-                        "(function () {"
-                        (clojure.string/join "\n" (map #(emit %) (drop-last r)))
-                        "\nreturn " (emit (last r))
-                        "})()")
+                (str (emit lhs "") "" op "" (when rhs-neg "-") (emit rhs line-ending)))
+      (:exec2 :exec3) (return-last-thunk r)
       :while (let [idx-var (gensym "mdparser_idx")
                    count-var (gensym "mdparser_count")]
                (str
@@ -457,7 +461,7 @@
       :loop (let [[c comma & s] r
                   idx-var (gensym "mdparser_idx")]
               (str
-                "for(var " idx-var "=0;" idx-var "<" (emit c) ";" idx-var "++){"
+                "for(var " idx-var "=0;" idx-var "<" (emit c "") ";" idx-var "++){"
                 (clojure.string/join "\n" (map emit s))
                 "}"))
       (:bitwise
@@ -472,10 +476,10 @@
                        (str ({"/" "div"
                               "%" "mod"
                               "|" "bitor"
-                              "&" "bitand"} op) "(" (when lhs-neg "-") (emit lhs) "," (when rhs-neg "-") (emit rhs) ")")
-                       (str "(" (when lhs-neg "-") (emit lhs) op (when rhs-neg "-") (emit rhs) ")")))
+                              "&" "bitand"} op) "(" (when lhs-neg "-") (emit lhs "") "," (when rhs-neg "-") (emit rhs "") ")")
+                       (str "(" (when lhs-neg "-") (emit lhs "") op (when rhs-neg "-") (emit rhs "") ")")))
       :NUMBER (let [[is-neg r] (remove-leading-negs r)]
-                (str (when is-neg "-") (emit (last r))))
+                (str (when is-neg "-") (emit (last r) "")))
       :DECIMAL (if (== (count r) 3)
                  (let [[lhs _ rhs] r]
                    (str lhs "." rhs))
@@ -489,28 +493,28 @@
                     sname (correct-basevar sname)]
                 (str (when is-neg "-") "m." sname))
       :BUFFER (let [[is-neg r] (remove-leading-negs r)]
-                (str (when is-neg "-") "m." (first r) "[" (emit (second r)) "]"))
+                (str (when is-neg "-") "m." (first r) "[" (emit (second r) "") "]"))
       :condop (last r)
       :cond (let [[lhs c rhs] r]
               (str
                 "(("
-                (emit lhs)
-                (emit c)
-                (emit rhs)
+                (emit lhs "")
+                (emit c "")
+                (emit rhs "")
                 ")?1:0)"))
       :if (let [[is-neg r] (remove-leading-negs r)
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
               (when is-neg "-")
-              "((" (emit (first c)) "!=0)?"
-              "(" (clojure.string/join " " (map emit t)) ")"
+              "((" (emit (first c) "") "!=0)?"
+              "(" (return-last-thunk t) ")"
               ":"
-              "(" (clojure.string/join " " (map emit f)) "))"))
+              "(" (return-last-thunk f) "))" line-ending))
       :funcall (let [[is-neg-top r] (remove-leading-negs r)
                      [fname & args] r
                      [is-neg fname] (remove-leading-negs (rest fname))
                      f (funmap (keyword (.toLowerCase (first fname))))
-                     as (clojure.string/join ", " (map emit args))]
+                     as (clojure.string/join ", " (map #(emit % "") args))]
                  (if (nil? f)
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
                    (str (when (or is-neg-top is-neg) "-") f "(" as ")")))))))
