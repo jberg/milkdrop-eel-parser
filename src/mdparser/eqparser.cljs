@@ -251,9 +251,10 @@
    DECIMAL     = (DIGITS? '.' DIGITS) | (DIGITS '.' DIGITS?)
    INTEGER     = DIGITS
    <DIGITS>    = #'\\d+'
-   SYMBOL      = NEGATIVE* #'[A-Za-z][A-Za-z0-9_]*'
+   SYMBOL      = NEGATIVE* NOT? #'[A-Za-z][A-Za-z0-9_]*'
    BUFFER      = NEGATIVE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen
    NEGATIVE    = <'-'>
+   NOT         = <'!'>
    "
    :auto-whitespace :standard))
 
@@ -492,7 +493,9 @@
       :SYMBOL (let [[is-neg r] (remove-leading-negs r)
                     sname (last r)
                     sname (correct-basevar sname)]
-                (str (when is-neg "-") "m." sname))
+                (if (> (count r) 1)
+                  (str (when is-neg "-") "bnot(m." sname ")")
+                  (str (when is-neg "-") "m." sname)))
       :BUFFER (let [[is-neg r] (remove-leading-negs r)]
                 (str (when is-neg "-") "m." (first r) "[" (emit (second r) "") "]"))
       :condop (last r)
