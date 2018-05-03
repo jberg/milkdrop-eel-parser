@@ -447,7 +447,7 @@
                                        (remove-trailing-negs r)
                                        [nil r])
                     [lhs op rhs] r]
-                (str (emit lhs "") "" op "" (when rhs-neg "-") (emit rhs line-ending)))
+                (str (emit lhs "") "" op "" (when rhs-neg "-") (emit rhs "") line-ending))
       (:exec2 :exec3) (return-last-thunk r)
       :while (let [idx-var (gensym "mdparser_idx")
                    count-var (gensym "mdparser_count")]
