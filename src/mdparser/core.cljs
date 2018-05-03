@@ -1,11 +1,12 @@
 (ns mdparser.core
-  (:require [mdparser.eqparser :as eqp]))
+  (:require [goog.object]
+            [mdparser.eqparser :as eqp]))
 
 (defn ^:export make-shape-map
   [s]
-  (let [init_eqs_str (aget s "init_eqs_str")
-        frame_eqs_str (aget s "frame_eqs_str")
-        per_shape_frame_key (or (keyword (aget s "per_shape_frame_key")) :per-shape-frame)
+  (let [init_eqs_str (goog.object/get s "init_eqs_str")
+        frame_eqs_str (goog.object/get s "frame_eqs_str")
+        per_shape_frame_key (or (keyword (goog.object/get s "per_shape_frame_key")) :per-shape-frame)
         per-frame-init-parse (when (seq init_eqs_str) (eqp/parse init_eqs_str))
         per-frame-init-eqs (when (seq per-frame-init-parse) (eqp/emit per-frame-init-parse))
         per-frame-parse (when (seq frame_eqs_str) (eqp/parse frame_eqs_str))
@@ -34,11 +35,11 @@
 
 (defn ^:export make-wave-map
   [s]
-  (let [init_eqs_str (aget s "init_eqs_str")
-        frame_eqs_str (aget s "frame_eqs_str")
-        point_eqs_str (aget s "point_eqs_str")
-        per_wave_frame_key (or (keyword (aget s "per_wave_frame_key")) :per-wave-frame)
-        per_wave_point_key (or (keyword (aget s "per_wave_point_key")) :per-wave-point)
+  (let [init_eqs_str (goog.object/get s "init_eqs_str")
+        frame_eqs_str (goog.object/get s "frame_eqs_str")
+        point_eqs_str (goog.object/get s "point_eqs_str")
+        per_wave_frame_key (or (keyword (goog.object/get s "per_wave_frame_key")) :per-wave-frame)
+        per_wave_point_key (or (keyword (goog.object/get s "per_wave_point_key")) :per-wave-point)
         per-frame-init-parse (when (seq init_eqs_str) (eqp/parse init_eqs_str))
         per-frame-init-eqs (when (seq per-frame-init-parse) (eqp/emit per-frame-init-parse))
         per-frame-parse (when (seq frame_eqs_str) (eqp/parse frame_eqs_str))
