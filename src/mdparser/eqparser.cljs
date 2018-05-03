@@ -6,6 +6,7 @@
   {
    ;unary
    :int "Math.floor"
+   :floor "Math.floor"
    :abs "Math.abs"
    :sin "Math.sin"
    :cos "Math.cos"
