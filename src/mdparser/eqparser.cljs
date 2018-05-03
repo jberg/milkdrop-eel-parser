@@ -452,7 +452,7 @@
                  "var " count-var  "=0;"
                  "do{"
                  count-var "+=1;"
-                 idx-var "=" (clojure.string/join " " (map #(emit % "") r))
+                 idx-var "=" (emit (first r))
                  "}while(" idx-var "!==0&&" count-var "<1048576);"))
       :loop (let [[c comma & s] r
                   idx-var (gensym "mdparser_idx")]
