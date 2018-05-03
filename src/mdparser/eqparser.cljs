@@ -493,17 +493,17 @@
       :cond (let [[lhs c rhs] r]
               (str
                 "(("
-                (emit lhs) " "
-                (emit c) " "
+                (emit lhs)
+                (emit c)
                 (emit rhs)
-                ") ? 1 : 0)"))
+                ")?1:0)"))
       :if (let [[is-neg r] (remove-leading-negs r)
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
               (when is-neg "-")
-              "((" (emit (first c)) " != 0) ? "
-              "(" (clojure.string/join " " (map emit t)) ") "
-              ": "
+              "((" (emit (first c)) "!=0)?"
+              "(" (clojure.string/join " " (map emit t)) ")"
+              ":"
               "(" (clojure.string/join " " (map emit f)) "))"))
       :funcall (let [[is-neg-top r] (remove-leading-negs r)
                      [fname & args] r
