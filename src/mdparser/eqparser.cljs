@@ -219,11 +219,11 @@
   (insta/parser
    "
    PROGRAM     = STATEMENT+
-   STATEMENT   = ASSIGN / (bitexpr <';'>) / ((loop | while | if) <';'>?)
-   <ASSIGN>    = lhs assign-op rhs <';'>
-   exec3       = <'exec3'> lparen STATEMENT+ <comma> STATEMENT+ <comma> STATEMENT* bitexpr* rparen
-   exec2       = <'exec2'> lparen STATEMENT+ <comma> STATEMENT* bitexpr* rparen
-   loop        = <'loop'> lparen bitexpr comma STATEMENT+ rparen
+   STATEMENT   = (ASSIGN <';'>) / ((loop | while | if) <';'>?) / (bitexpr <';'>)
+   ASSIGN      = lhs assign-op rhs
+   exec3       = <'exec3'> lparen STATEMENT+ <comma> STATEMENT+ <comma> STATEMENT* bitexpr? rparen
+   exec2       = <'exec2'> lparen STATEMENT+ <comma> STATEMENT* bitexpr? rparen
+   loop        = <'loop'> lparen bitexpr comma STATEMENT* ASSIGN? rparen
    while       = <'while'> lparen (exec3 | exec2) rparen
    <assign-op> = '=' | '+=' | '-=' | '*=' | '/=' | '%='
    <lhs>       = BUFFER | SYMBOL
@@ -292,71 +292,72 @@
 
 (defn analyze-line
   [l]
-  (let [[f & r] l
-        [lhs-neg r] (remove-leading-negs r)
-        [rhs-neg r] (remove-trailing-negs r)]
-    (if (> (count r) 1)
-      (let [[lhs op rhs] r
-            lhs-symbs (if (= (first lhs) :BUFFER)
-                        []
-                        [(correct-basevar (last lhs))])
-            rhs-symbs (if (= (first lhs) :BUFFER)
-                        (into (get-symbols rhs) (get-symbols lhs))
-                        (get-symbols rhs))
-            rhs-symbs (filter #(nil? (funmap (keyword %))) rhs-symbs) ;don't need function symbols
-            rhs-symbs (set (map correct-basevar rhs-symbs))]
-        {:lhs lhs-symbs
-         :rhs rhs-symbs})
-      (case (first (first r))
-        (:bitwise
-         :add-sub
-         :mult-div) (let [[lhs-neg r] (remove-leading-negs (rest (first r)))
-                          [rhs-neg r] (remove-trailing-negs r)
-                          [lhs op rhs] r
-                          lhssymbs (get-symbols lhs)
-                          rhssymbs (get-symbols rhs)]
-                      {:lhs []
-                       :rhs (into (into #{} lhssymbs) rhssymbs)})
-        :NUMBER {:lhs [] :rhs #{}}
-        :loop (let [[c comma & s] (rest (first r))]
-                (reduce
-                  (fn [coll a]
-                    {:lhs (into (coll :lhs) (a :lhs))
-                     :rhs (into (coll :rhs) (a :rhs))})
-                  {:lhs []
-                   :rhs (into #{} (get-symbols c))}
-                  (map analyze-line s)))
-        :while (reduce
-                (fn [coll a]
-                  {:lhs (into (coll :lhs) (a :lhs))
-                   :rhs (into (coll :rhs) (a :rhs))})
-                {:lhs []
-                 :rhs #{}}
-                (map #(if (= (first %) :STATEMENT)
-                        (analyze-line %)
-                        {:lhs [] :rhs (into #{} (get-symbols %))})
-                     (rest (first (rest (first r))))))
-        :if (let [[is-neg r] (remove-leading-negs (rest (first r)))
-                  [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
+  (let [[f & r] l]
+    (case f
+      :STATEMENT (analyze-line (first r))
+      :ASSIGN (let [[rhs-neg r] (if (> (count r) 3)
+                                       (remove-trailing-negs r)
+                                       [nil r])
+                    [lhs op rhs] r
+                    lhs-symbs (if (= (first lhs) :BUFFER)
+                                []
+                                [(correct-basevar (last lhs))])
+                    rhs-symbs (if (= (first lhs) :BUFFER)
+                                (into (get-symbols rhs) (get-symbols lhs))
+                                (get-symbols rhs))
+                    rhs-symbs (filter #(nil? (funmap (keyword %))) rhs-symbs) ;don't need function symbols
+                    rhs-symbs (set (map correct-basevar rhs-symbs))]
+                {:lhs lhs-symbs
+                 :rhs rhs-symbs})
+      (:bitwise
+       :add-sub
+       :mult-div) (let [[lhs-neg r] (remove-leading-negs r)
+                        [rhs-neg r] (remove-trailing-negs r)
+                        [lhs op rhs] r
+                        lhssymbs (get-symbols lhs)
+                        rhssymbs (get-symbols rhs)]
+                    {:lhs []
+                     :rhs (into (into #{} lhssymbs) rhssymbs)})
+      :NUMBER {:lhs [] :rhs #{}}
+      :loop (let [[c comma & s] r]
               (reduce
                 (fn [coll a]
                   {:lhs (into (coll :lhs) (a :lhs))
                    :rhs (into (coll :rhs) (a :rhs))})
                 {:lhs []
                  :rhs (into #{} (get-symbols c))}
-                (map #(if (= (first %) :STATEMENT)
-                        (analyze-line %)
-                        {:lhs [] :rhs (into #{} (get-symbols %))})
-                     (into t f))))
-        :funcall (let [[is-neg-top r] (remove-leading-negs (rest (first r)))
-                       [fname & args] r]
-                   (reduce
-                     (fn [coll a]
-                       {:lhs (into (coll :lhs) (a :lhs))
-                        :rhs (into (coll :rhs) (a :rhs))})
-                     {:lhs []
-                      :rhs #{}}
-                     (map #(hash-map :lhs [] :rhs (into #{} (get-symbols %))) args)))))))
+                (map analyze-line s)))
+      :while (reduce
+              (fn [coll a]
+                {:lhs (into (coll :lhs) (a :lhs))
+                 :rhs (into (coll :rhs) (a :rhs))})
+              {:lhs []
+               :rhs #{}}
+              (map #(if (= (first %) :STATEMENT)
+                      (analyze-line %)
+                      {:lhs [] :rhs (into #{} (get-symbols %))})
+                   r))
+      :if (let [[is-neg r] (remove-leading-negs r)
+                [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
+            (reduce
+              (fn [coll a]
+                {:lhs (into (coll :lhs) (a :lhs))
+                 :rhs (into (coll :rhs) (a :rhs))})
+              {:lhs []
+               :rhs (into #{} (get-symbols c))}
+              (map #(if (= (first %) :STATEMENT)
+                      (analyze-line %)
+                      {:lhs [] :rhs (into #{} (get-symbols %))})
+                   (into t f))))
+      :funcall (let [[is-neg-top r] (remove-leading-negs r)
+                     [fname & args] r]
+                 (reduce
+                   (fn [coll a]
+                     {:lhs (into (coll :lhs) (a :lhs))
+                      :rhs (into (coll :rhs) (a :rhs))})
+                   {:lhs []
+                    :rhs #{}}
+                   (map #(hash-map :lhs [] :rhs (into #{} (get-symbols %))) args))))))
 
 (def non-rkeys #{:x :y :rad :ang})
 
@@ -445,13 +446,12 @@
                         (str "(" (when lhs-neg "-") (emit lhs) op (when rhs-neg "-") (emit rhs) ")"))))]
     (case f
       :PROGRAM (clojure.string/join "\n" (map emit r))
-      :STATEMENT (if (== (count r) 1)
-                   (emit (first r))
-                   (let [[rhs-neg r] (if (> (count r) 3)
+      :STATEMENT (emit (first r))
+      :ASSIGN (let [[rhs-neg r] (if (> (count r) 3)
                                        (remove-trailing-negs r)
                                        [nil r])
-                         [lhs op rhs] r]
-                     (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) line-ending)))
+                    [lhs op rhs] r]
+                (str (emit lhs) " " op " " (when rhs-neg "-") (emit rhs) line-ending))
       (:exec2 :exec3) (str
                         "(function () {"
                         (clojure.string/join "\n" (map #(emit %) (drop-last r)))
