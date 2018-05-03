@@ -322,6 +322,8 @@
                     {:lhs []
                      :rhs (into (into #{} lhssymbs) rhssymbs)})
       :NUMBER {:lhs [] :rhs #{}}
+      :BUFFER {:lhs [] :rhs (into #{} (get-symbols (second r)))}
+      :SYMBOL {:lhs [] :rhs (into #{} [(correct-basevar (last r))])}
       :loop (let [[c comma & s] r]
               (reduce
                 (fn [coll a]
