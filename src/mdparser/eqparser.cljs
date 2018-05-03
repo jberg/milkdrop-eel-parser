@@ -251,8 +251,9 @@
    DECIMAL     = (DIGITS? '.' DIGITS) | (DIGITS '.' DIGITS?)
    INTEGER     = DIGITS
    <DIGITS>    = #'\\d+'
-   SYMBOL      = NEGATIVE* NOT? #'[A-Za-z][A-Za-z0-9_]*'
+   SYMBOL      = NEGATIVE* NOT? !RESTRICTED #'[A-Za-z][A-Za-z0-9_]*'
    BUFFER      = NEGATIVE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen
+   RESTRICTED  = ('loop' | 'while' | 'if' | 'If' | 'IF' | 'exec3' | 'exec2' | 'megabuf' | 'gmegabuf') (#'\\s+' | '(')
    NEGATIVE    = <'-'>
    NOT         = <'!'>
    "
