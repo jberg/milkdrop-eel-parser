@@ -457,7 +457,7 @@
       :loop (let [[c comma & s] r
                   idx-var (gensym "mdparser_idx")]
               (str
-                "for (var " idx-var " = 0; " idx-var " < " (emit c) "; "idx-var "++) {"
+                "for(var " idx-var "=0;" idx-var "<" (emit c) ";" idx-var "++){"
                 (clojure.string/join "\n" (map emit s))
                 "}"))
       (:bitwise
