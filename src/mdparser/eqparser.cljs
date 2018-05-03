@@ -430,20 +430,7 @@
 (defn emit
   ([l] (emit l ";"))
   ([l line-ending]
-  (let [[f & r] l
-        basic-op (fn [r]
-                   (let [[lhs-neg r] (remove-leading-negs r)
-                         [rhs-neg r] (remove-trailing-negs r)
-                         [lhs op rhs] r]
-                      (if (or (= op "/")
-                              (= op "%")
-                              (= op "|")
-                              (= op "&"))
-                     (str ({"/" "div"
-                            "%" "mod"
-                            "|" "bitor"
-                            "&" "bitand"} op) "(" (when lhs-neg "-") (emit lhs) "," (when rhs-neg "-") (emit rhs) ")")
-                        (str "(" (when lhs-neg "-") (emit lhs) op (when rhs-neg "-") (emit rhs) ")"))))]
+  (let [[f & r] l]
     (case f
       :PROGRAM (clojure.string/join "\n" (map emit r))
       :STATEMENT (emit (first r))
@@ -472,9 +459,20 @@
                 "for (var " idx-var " = 0; " idx-var " < " (emit c) "; "idx-var "++) {"
                 (clojure.string/join "\n" (map emit s))
                 "}"))
-      :bitwise (basic-op r)
-      :add-sub (basic-op r)
-      :mult-div (basic-op r)
+      (:bitwise
+       :add-sub
+       :mult-div) (let [[lhs-neg r] (remove-leading-negs r)
+                        [rhs-neg r] (remove-trailing-negs r)
+                        [lhs op rhs] r]
+                     (if (or (= op "/")
+                             (= op "%")
+                             (= op "|")
+                             (= op "&"))
+                       (str ({"/" "div"
+                              "%" "mod"
+                              "|" "bitor"
+                              "&" "bitand"} op) "(" (when lhs-neg "-") (emit lhs) "," (when rhs-neg "-") (emit rhs) ")")
+                       (str "(" (when lhs-neg "-") (emit lhs) op (when rhs-neg "-") (emit rhs) ")")))
       :NUMBER (let [[is-neg r] (remove-leading-negs r)]
                 (str (when is-neg "-") (emit (last r))))
       :DECIMAL (if (== (count r) 3)
