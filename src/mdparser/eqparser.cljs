@@ -225,6 +225,7 @@
    exec2       = <'exec2'> lparen STATEMENT+ <comma> STATEMENT* bitexpr? rparen
    loop        = <'loop'> lparen bitexpr comma STATEMENT* ASSIGN? rparen
    while       = <'while'> lparen (exec3 | exec2) rparen
+   <INNER-EXP> = (ASSIGN | loop | while | if | exec3 | exec2 | bitexpr) <';'>?
    <assign-op> = '=' | '+=' | '-=' | '*=' | '/=' | '%='
    <lhs>       = BUFFER | SYMBOL
    <rhs>       = bitexpr
@@ -238,7 +239,7 @@
    <bitop>     = '&' | '|'
    <addop>     = '+' | '-'
    <multop>    = '/' | '*' | '%'
-   if          = NEGATIVE* <('if' | 'If' | 'IF')> lparen bitexpr comma (STATEMENT | exec3 | exec2 | bitexpr)+ comma (STATEMENT | exec3 | exec2 | bitexpr)+ rparen
+   if          = NEGATIVE* <('if' | 'If' | 'IF')> lparen bitexpr comma INNER-EXP+ comma INNER-EXP+ rparen
    funcall     = SYMBOL lparen bitexpr (<comma> bitexpr)* rparen
    cond        = lparen* bitexpr condop bitexpr rparen*
    condop      = '>' | '<' | '>=' | '<=' | '==' | '!=' | '&&' | '||'
