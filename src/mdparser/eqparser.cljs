@@ -241,7 +241,7 @@
    if          = NEGATIVE* <('if' | 'If' | 'IF')> lparen bitexpr comma (STATEMENT | exec3 | exec2 | bitexpr)+ comma (STATEMENT | exec3 | exec2 | bitexpr)+ rparen
    funcall     = SYMBOL lparen bitexpr (<comma> bitexpr)* rparen
    cond        = lparen* bitexpr condop bitexpr rparen*
-   condop      = '>' | '<' | '>=' | '<=' | '==' | '!='
+   condop      = '>' | '<' | '>=' | '<=' | '==' | '!=' | '&&' | '||'
    <lparen>    = <'('>
    <rparen>    = <')'>
    comma       = <','>
@@ -495,8 +495,8 @@
       :cond (let [[lhs c rhs] r]
               (str
                 "(("
-                (emit lhs)
-                (emit c)
+                (emit lhs) " "
+                (emit c) " "
                 (emit rhs)
                 ") ? 1 : 0)"))
       :if (let [[is-neg r] (remove-leading-negs r)
