@@ -228,12 +228,13 @@
    loop        = <'loop'> lparen bitexpr comma INNER-STATEMENT+ rparen
    while       = <'while'> lparen (exec3 | exec2) rparen
    <assign-op> = '=' | '+=' | '-=' | '*=' | '/=' | '%='
-   <lhs>       = BUFFER | SYMBOL
+   <lhs>       = BUFFER | (SYMBOL !lparen)
    <rhs>       = bitexpr
    <bitexpr>   = loop / cond / BUFFER / if / expr / bitwise
    <expr>      = term | add-sub
    <term>      = factor | mult-div
    <factor>    = (if / BUFFER / funcall / NUMBER / SYMBOL) | NEGATIVE* lparen bitexpr rparen
+   <factor>    = (if / BUFFER / funcall / NUMBER / (SYMBOL !lparen)) | NEGATIVE* lparen bitexpr rparen
    bitwise     = bitexpr bitop expr
    add-sub     = expr addop term
    mult-div    = term multop factor
@@ -253,7 +254,7 @@
    <DIGITS>    = #'\\d+'
    SYMBOL      = NEGATIVE* NOT? !RESTRICTED #'[A-Za-z][A-Za-z0-9_]*'
    BUFFER      = NEGATIVE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen
-   RESTRICTED  = ('loop' | 'while' | 'if' | 'If' | 'IF' | 'exec3' | 'exec2' | 'megabuf' | 'gmegabuf') (#'\\s+' | '(')
+   RESTRICTED  = ('loop' | 'while' | 'if' | 'If' | 'IF' | 'exec3' | 'exec2' | 'megabuf' | 'gmegabuf') (#'\\s+' | lparen)
    NEGATIVE    = <'-'>
    NOT         = <'!'>
    "
