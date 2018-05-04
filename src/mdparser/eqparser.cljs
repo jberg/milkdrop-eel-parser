@@ -457,12 +457,14 @@
       :while (let [idx-var (gensym "mdparser_idx")
                    count-var (gensym "mdparser_count")]
                (str
+                 "(function(){"
                  "var " idx-var ";"
                  "var " count-var  "=0;"
                  "do{"
                  count-var "+=1;"
                  idx-var "=" (emit (first r))
-                 "}while(" idx-var "!==0&&" count-var "<1048576);"))
+                 "}while(" idx-var "!==0&&" count-var "<1048576);"
+                 "}())" line-ending))
       :loop (let [[c comma & s] r
                   idx-var (gensym "mdparser_idx")]
               (str
