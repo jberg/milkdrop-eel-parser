@@ -248,8 +248,8 @@
    <rparen>    = <')'>
    comma       = <','>
    NUMBER      = NEGATIVE* <'+'>? (DECIMAL / INTEGER)
-   DECIMAL     = (DIGITS? '.' DIGITS) | (DIGITS '.' DIGITS?)
-   INTEGER     = DIGITS
+   DECIMAL     = (DIGITS '.' DIGITS) / (!DIGITS '.' DIGITS) / (DIGITS '.' !DIGITS)
+   INTEGER     = !DECIMAL DIGITS
    <DIGITS>    = #'\\d+'
    SYMBOL      = NEGATIVE* NOT? !RESTRICTED #'[A-Za-z][A-Za-z0-9_]*'
    BUFFER      = NEGATIVE* ('gmegabuf' | 'megabuf') lparen bitexpr rparen
