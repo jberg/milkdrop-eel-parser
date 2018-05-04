@@ -441,12 +441,12 @@
                             (if (> (count statements) 1)
                               (str
                                 "(function(){"
-                                (clojure.string/join "\n" (map #(emit %) (drop-last statements)))
-                                "\nreturn " (emit (last statements))
+                                (clojure.string/join " " (map #(emit %) (drop-last statements)))
+                                " return " (emit (last statements))
                                 "})()")
                               (emit (first statements) "")))]
     (case f
-      :PROGRAM (clojure.string/join "\n" (map emit r))
+      :PROGRAM (clojure.string/join " " (map emit r))
       :STATEMENT (emit (first r))
       :ASSIGN (let [[rhs-neg r] (if (> (count r) 3)
                                        (remove-trailing-negs r)
@@ -467,7 +467,7 @@
                   idx-var (gensym "mdparser_idx")]
               (str
                 "for(var " idx-var "=0;" idx-var "<" (emit c "") ";" idx-var "++){"
-                (clojure.string/join "\n" (map emit s))
+                (clojure.string/join " " (map emit s))
                 "}"))
       (:bitwise
        :add-sub
