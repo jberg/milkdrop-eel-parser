@@ -296,7 +296,8 @@
 
 (defn trim-leading-zero
   [n]
-  (if (and (.startsWith n "0")
+  (if (and (> (count n) 1)
+           (.startsWith n "0")
            (not (.startsWith n "0.")))
     (trim-leading-zero (.substring n 1))
     n))
