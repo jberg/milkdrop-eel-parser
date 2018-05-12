@@ -15,12 +15,12 @@
         user-vars (if-let [vs (and (seq per-frame-a) (per-frame-a :user-vars))] vs [])
         exclude-vars #{"r" "g" "b" "a" "r2" "g2" "b2" "a2"}
         user-vars (filter #(not (exclude-vars %)) user-vars)
-        per-frame-init-eqs (str (clojure.string/join "\n" (map #(str "m['" % "'] = 0;") user-vars))
-                                "\n"
+        per-frame-init-eqs (str (clojure.string/join " " (map #(str "a['" % "'] = 0;") user-vars))
+                                " "
                                 per-frame-init-eqs)
         rkeys (if (seq per-frame-a) (per-frame-a :rkeys) [])
       per-frame-init-eqs (str per-frame-init-eqs
-                     "\n\t\t\tm['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
+                     " a['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
     (clj->js
       {:perFrameInitEQs per-frame-init-eqs
        :perFrameEQs per-frame-eqs})))
@@ -53,12 +53,12 @@
         user-vars (into (into #{} user-vars-point) user-vars-frame)
         exclude-vars #{"r" "g" "b" "a"}
         user-vars (filter #(not (exclude-vars %)) user-vars)
-        per-frame-init-eqs (str (clojure.string/join "\n" (map #(str "m['" % "'] = 0;") user-vars))
-                                "\n"
+        per-frame-init-eqs (str (clojure.string/join " " (map #(str "a['" % "'] = 0;") user-vars))
+                                " "
                                 per-frame-init-eqs)
       rkeys (if (seq per-point-a) (per-point-a :rkeys) [])
       per-frame-init-eqs (str per-frame-init-eqs
-                     "\n\t\t\tm['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
+                     " a['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
     (clj->js
       {:perFrameInitEQs per-frame-init-eqs
      :perFrameEQs per-frame-eqs
@@ -88,12 +88,12 @@
         user-vars-frame (if-let [vs (and (seq per-frame-a) (per-frame-a :user-vars))] vs [])
         user-vars-pixel (if-let [vs (and (seq per-pixel-a) (per-pixel-a :user-vars))] vs [])
         user-vars (into (into #{} user-vars-pixel) user-vars-frame)
-        per-frame-init-eqs (str (clojure.string/join "\n" (map #(str "m['" % "'] = 0;") user-vars))
-                                "\n"
+        per-frame-init-eqs (str (clojure.string/join " " (map #(str "a['" % "'] = 0;") user-vars))
+                                " "
                                 per-frame-init-eqs)
         rkeys (if (seq per-pixel-a) (per-pixel-a :rkeys) [])
         per-frame-eqs (str per-frame-eqs
-                           "\n\t\tm['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
+                           "a['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
     (clj->js
      {:perFrameInitEQs per-frame-init-eqs
       :perFrameEQs per-frame-eqs
@@ -115,12 +115,12 @@
         user-vars-frame (if-let [vs (and (seq per-frame-a) (per-frame-a :user-vars))] vs [])
         user-vars-pixel (if-let [vs (and (seq per-pixel-a) (per-pixel-a :user-vars))] vs [])
         user-vars (into (into #{} user-vars-pixel) user-vars-frame)
-        per-frame-init-eqs (str (clojure.string/join "\n" (map #(str "m['" % "'] = 0;") user-vars))
-                                "\n"
+        per-frame-init-eqs (str (clojure.string/join " " (map #(str "a['" % "'] = 0;") user-vars))
+                                " "
                                 per-frame-init-eqs)
         rkeys (if (seq per-pixel-a) (per-pixel-a :rkeys) [])
         per-frame-eqs (str per-frame-eqs
-                           "\n\t\tm['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")
+                           "a['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")
         shapesMap (make-shapes-map shapes)
         wavesMap (make-waves-map waves)]
     (clj->js

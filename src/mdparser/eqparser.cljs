@@ -499,10 +499,10 @@
                     sname (last r)
                     sname (correct-basevar sname)]
                 (if (> (count r) 1)
-                  (str (when is-neg "-") "bnot(m['" sname "']')")
-                  (str (when is-neg "-") "m['" sname "']")))
+                  (str (when is-neg "-") "bnot(a['" sname "']')")
+                  (str (when is-neg "-") "a['" sname "']")))
       :BUFFER (let [[is-neg r] (remove-leading-negs r)]
-                (str (when is-neg "-") "m['" (first r) "'][" (emit (second r) "") "]"))
+                (str (when is-neg "-") "a['" (first r) "'][" (emit (second r) "") "]"))
       :condop (last r)
       :cond (let [[lhs c rhs] r]
               (str
