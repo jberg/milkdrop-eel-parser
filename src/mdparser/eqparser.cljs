@@ -294,6 +294,13 @@
         r (filter #(not (= % [:NEGATIVE])) x)]
     [(pos? (mod (count ns) 2)) r]))
 
+(defn trim-leading-zero
+  [n]
+  (if (and (.startsWith n "0")
+           (not (.startsWith n "0.")))
+    (trim-leading-zero (.substring n 1))
+    n))
+
 (defn analyze-line
   [l]
   (let [[f & r] l]
@@ -489,17 +496,17 @@
                 (str (when is-neg "-") (emit (last r) "")))
       :DECIMAL (if (== (count r) 3)
                  (let [[lhs _ rhs] r]
-                   (str lhs "." rhs))
+                   (str (trim-leading-zero lhs) "." rhs))
                  (let [[lhs rhs] r]
                    (if (= lhs ".")
                      (str "0." rhs)
-                     (str lhs ".0"))))
-      :INTEGER (first r)
+                     (str (trim-leading-zero lhs) ".0"))))
+      :INTEGER (trim-leading-zero (first r))
       :SYMBOL (let [[is-neg r] (remove-leading-negs r)
                     sname (last r)
                     sname (correct-basevar sname)]
                 (if (> (count r) 1)
-                  (str (when is-neg "-") "bnot(a['" sname "']')")
+                  (str (when is-neg "-") "bnot(a['" sname "'])")
                   (str (when is-neg "-") "a['" sname "']")))
       :BUFFER (let [[is-neg r] (remove-leading-negs r)]
                 (str (when is-neg "-") "a['" (first r) "'][" (emit (second r) "") "]"))
