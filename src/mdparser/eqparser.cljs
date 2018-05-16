@@ -523,7 +523,7 @@
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
               (when is-neg "-")
-              "((" (emit (first c) "") "!=0)?"
+              "((" (emit (first c) "") ")?"
               "(" (return-last-thunk t) ")"
               ":"
               "(" (return-last-thunk f) "))" line-ending))
