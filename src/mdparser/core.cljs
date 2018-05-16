@@ -6,19 +6,18 @@
   [s]
   (let [init_eqs_str (goog.object/get s "init_eqs_str")
         frame_eqs_str (goog.object/get s "frame_eqs_str")
-        per_shape_frame_key (or (keyword (goog.object/get s "per_shape_frame_key")) :per-shape-frame)
+
         per-frame-init-parse (when (seq init_eqs_str) (eqp/parse init_eqs_str))
         per-frame-init-eqs (when (seq per-frame-init-parse) (eqp/emit per-frame-init-parse))
+
         per-frame-parse (when (seq frame_eqs_str) (eqp/parse frame_eqs_str))
-        per-frame-a (when per-frame-parse (eqp/analyze per-frame-parse per_shape_frame_key))
+        per-frame-a (when per-frame-parse (eqp/analyze per-frame-parse :per-shape-frame))
         per-frame-eqs (when (seq per-frame-parse) (eqp/emit per-frame-parse))
+
         user-vars (if-let [vs (and (seq per-frame-a) (per-frame-a :user-vars))] vs [])
         per-frame-init-eqs (str (clojure.string/join " " (map #(str "a['" % "'] = 0;") user-vars))
                                 " "
-                                per-frame-init-eqs)
-        rkeys (if (seq per-frame-a) (per-frame-a :rkeys) [])
-      per-frame-init-eqs (str per-frame-init-eqs
-                     " a['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
+                                per-frame-init-eqs)]
     (clj->js
       {:perFrameInitEQs per-frame-init-eqs
        :perFrameEQs per-frame-eqs})))
@@ -36,25 +35,24 @@
   (let [init_eqs_str (goog.object/get s "init_eqs_str")
         frame_eqs_str (goog.object/get s "frame_eqs_str")
         point_eqs_str (goog.object/get s "point_eqs_str")
-        per_wave_frame_key (or (keyword (goog.object/get s "per_wave_frame_key")) :per-wave-frame)
-        per_wave_point_key (or (keyword (goog.object/get s "per_wave_point_key")) :per-wave-point)
+
         per-frame-init-parse (when (seq init_eqs_str) (eqp/parse init_eqs_str))
         per-frame-init-eqs (when (seq per-frame-init-parse) (eqp/emit per-frame-init-parse))
+
         per-frame-parse (when (seq frame_eqs_str) (eqp/parse frame_eqs_str))
-        per-frame-a (when per-frame-parse (eqp/analyze per-frame-parse per_wave_frame_key))
+        per-frame-a (when per-frame-parse (eqp/analyze per-frame-parse :per-wave-frame))
         per-frame-eqs (when (seq per-frame-parse) (eqp/emit per-frame-parse))
+
         per-point-parse (when (seq point_eqs_str) (eqp/parse point_eqs_str))
-        per-point-a (when per-point-parse (eqp/analyze per-point-parse per_wave_point_key))
+        per-point-a (when per-point-parse (eqp/analyze per-point-parse :per-wave-point))
         per-point-eqs (when (seq per-point-parse) (eqp/emit per-point-parse))
+
         user-vars-frame (if-let [vs (and (seq per-frame-a) (per-frame-a :user-vars))] vs [])
         user-vars-point (if-let [vs (and (seq per-point-a) (per-point-a :user-vars))] vs [])
         user-vars (into (into #{} user-vars-point) user-vars-frame)
         per-frame-init-eqs (str (clojure.string/join " " (map #(str "a['" % "'] = 0;") user-vars))
                                 " "
-                                per-frame-init-eqs)
-      rkeys (if (seq per-point-a) (per-point-a :rkeys) [])
-      per-frame-init-eqs (str per-frame-init-eqs
-                     " a['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
+                                per-frame-init-eqs)]
     (clj->js
       {:perFrameInitEQs per-frame-init-eqs
      :perFrameEQs per-frame-eqs
@@ -74,7 +72,7 @@
         per-frame-init-eqs (when (seq per-frame-init-parse) (eqp/emit per-frame-init-parse))
 
         per-frame-parse (when frame-eqs-str (eqp/parse frame-eqs-str))
-        per-frame-a (when per-frame-parse (eqp/analyze per-frame-parse))
+        per-frame-a (when per-frame-parse (eqp/analyze per-frame-parse :per-frame))
         per-frame-eqs (when (seq per-frame-parse) (eqp/emit per-frame-parse))
 
         per-pixel-parse (when pixel-eqs-str (eqp/parse pixel-eqs-str))
@@ -86,10 +84,7 @@
         user-vars (into (into #{} user-vars-pixel) user-vars-frame)
         per-frame-init-eqs (str (clojure.string/join " " (map #(str "a['" % "'] = 0;") user-vars))
                                 " "
-                                per-frame-init-eqs)
-        rkeys (if (seq per-pixel-a) (per-pixel-a :rkeys) [])
-        per-frame-eqs (str per-frame-eqs
-                           "a['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")]
+                                per-frame-init-eqs)]
     (clj->js
      {:perFrameInitEQs per-frame-init-eqs
       :perFrameEQs per-frame-eqs
@@ -101,7 +96,7 @@
         per-frame-init-eqs (when (seq per-frame-init-parse) (eqp/emit per-frame-init-parse))
 
         per-frame-parse (when frame-eqs-str (eqp/parse frame-eqs-str))
-        per-frame-a (when per-frame-parse (eqp/analyze per-frame-parse))
+        per-frame-a (when per-frame-parse (eqp/analyze per-frame-parse :per-frame))
         per-frame-eqs (when (seq per-frame-parse) (eqp/emit per-frame-parse))
 
         per-pixel-parse (when pixel-eqs-str (eqp/parse pixel-eqs-str))
@@ -114,9 +109,6 @@
         per-frame-init-eqs (str (clojure.string/join " " (map #(str "a['" % "'] = 0;") user-vars))
                                 " "
                                 per-frame-init-eqs)
-        rkeys (if (seq per-pixel-a) (per-pixel-a :rkeys) [])
-        per-frame-eqs (str per-frame-eqs
-                           "a['rkeys'] = [" (clojure.string/join "," (map #(str "'" % "'") rkeys)) "];")
         shapesMap (make-shapes-map shapes)
         wavesMap (make-waves-map waves)]
     (clj->js

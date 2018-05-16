@@ -104,10 +104,6 @@
    :g :g
    :b :b
    :a :a
-   :r2 :r2
-   :g2 :g2
-   :b2 :b2
-   :a2 :a2
    :border_r :border_r
    :border_g :border_g
    :border_b :border_b
@@ -118,21 +114,16 @@
    :tex_zoom :tex_zoom
    :tex_ang :tex_ang
    :additive :additive
-   :sides :sides
    :instance :instance
    :instances :num_inst
    :num_instances :num_inst
    :num_inst :num_inst
    :scaling :scaling
-   :samples :samples
    :badditive :additive
    :busedots :usedots
    :bspectrum :spectrum
    :smoothing :smoothing
    :bdrawthick :thick
-   :sample :sample
-   :value1 :value1
-   :value2 :value2
    :camera_x :camera_x
    :camera_y :camera_y
    :camera_z :camera_z
@@ -156,7 +147,8 @@
    :treb_att :treb_att})
 
 (def pool-vars
-  {:per-pixel [:x :y :rad :ang]
+  {:per-frame []
+   :per-pixel [:x :y :rad :ang]
    :per-shape-frame [:r :g :b :a :r2 :g2 :b2 :a2
                      :x :y :rad :ang
                      :border_r :border_g :border_b :border_a
@@ -183,18 +175,9 @@
     :bass_att :mid_att :treb_att})
 
 (def basevarset
-  (clojure.set/difference
-    (into
-     globalvarset
-     (vals varmap))
-    (reduce into #{} (map second pool-vars))))
-
-(def builtin-symbols
   (into
-   (into
-    #{}
-    (keys funmap))
-   (keys varmap)))
+   globalvarset
+   (vals varmap)))
 
 (def comment-regex #"//[\s\S]*")
 
@@ -283,6 +266,15 @@
        (filter #(and (sequential? %) (= (first %) :SYMBOL))
           (tree-seq sequential? identity t))))
 
+(defn analyze
+  [p eq-type]
+   (let [basevars (if (or (= eq-type :per-pixel) (= eq-type :per-frame))
+                    (into basevarset (pool-vars eq-type))
+                    (into globalvarset (pool-vars eq-type)))
+         user-vars (get-symbols p)
+         user-vars (filter #(nil? (basevars (keyword %))) user-vars)]
+     {:user-vars user-vars}))
+
 (defn remove-leading-negs
   [x]
   (let [[ns r] (split-with #(= % [:NEGATIVE]) x)]
@@ -301,145 +293,6 @@
            (not (.startsWith n "0.")))
     (trim-leading-zero (.substring n 1))
     n))
-
-(defn analyze-line
-  [l]
-  (let [[f & r] l]
-    (case f
-      :STATEMENT (analyze-line (first r))
-      :ASSIGN (let [[rhs-neg r] (if (> (count r) 3)
-                                       (remove-trailing-negs r)
-                                       [nil r])
-                    [lhs op rhs] r
-                    lhs-symbs (if (= (first lhs) :BUFFER)
-                                []
-                                [(correct-basevar (last lhs))])
-                    rhs-symbs (if (= (first lhs) :BUFFER)
-                                (into (get-symbols rhs) (get-symbols lhs))
-                                (get-symbols rhs))
-                    rhs-symbs (filter #(nil? (funmap (keyword %))) rhs-symbs) ;don't need function symbols
-                    rhs-symbs (set (map correct-basevar rhs-symbs))]
-                {:lhs lhs-symbs
-                 :rhs rhs-symbs})
-      (:bitwise
-       :add-sub
-       :mult-div) (let [[lhs-neg r] (remove-leading-negs r)
-                        [rhs-neg r] (remove-trailing-negs r)
-                        [lhs op rhs] r
-                        lhssymbs (get-symbols lhs)
-                        rhssymbs (get-symbols rhs)]
-                    {:lhs []
-                     :rhs (into (into #{} lhssymbs) rhssymbs)})
-      :NUMBER {:lhs [] :rhs #{}}
-      :BUFFER {:lhs [] :rhs (into #{} (get-symbols (second r)))}
-      :SYMBOL {:lhs [] :rhs (into #{} [(correct-basevar (last r))])}
-      :loop (let [[c comma & s] r]
-              (reduce
-                (fn [coll a]
-                  {:lhs (into (coll :lhs) (a :lhs))
-                   :rhs (into (coll :rhs) (a :rhs))})
-                {:lhs []
-                 :rhs (into #{} (get-symbols c))}
-                (map analyze-line s)))
-      :while (reduce
-              (fn [coll a]
-                {:lhs (into (coll :lhs) (a :lhs))
-                 :rhs (into (coll :rhs) (a :rhs))})
-              {:lhs []
-               :rhs #{}}
-              (map #(if (= (first %) :STATEMENT)
-                      (analyze-line %)
-                      {:lhs [] :rhs (into #{} (get-symbols %))})
-                   r))
-      :if (let [[is-neg r] (remove-leading-negs r)
-                [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
-            (reduce
-              (fn [coll a]
-                {:lhs (into (coll :lhs) (a :lhs))
-                 :rhs (into (coll :rhs) (a :rhs))})
-              {:lhs []
-               :rhs (into #{} (get-symbols c))}
-              (map #(if (= (first %) :STATEMENT)
-                      (analyze-line %)
-                      {:lhs [] :rhs (into #{} (get-symbols %))})
-                   (into t f))))
-      :funcall (let [[is-neg-top r] (remove-leading-negs r)
-                     [fname & args] r]
-                 (reduce
-                   (fn [coll a]
-                     {:lhs (into (coll :lhs) (a :lhs))
-                      :rhs (into (coll :rhs) (a :rhs))})
-                   {:lhs []
-                    :rhs #{}}
-                   (map #(hash-map :lhs [] :rhs (into #{} (get-symbols %))) args))))))
-
-(def non-rkeys #{:x :y :rad :ang})
-
-(defn get-rewrite-keys
-  "Find keys that need to be rewritten between run of the per pixel equations.
-  As an optimization we rewrite the keys that have been read from before being written
-  to instead of cloning the whole object."
-  [lhs-symbs rhs-symbss]
-  (let [lhs-first-occur (reduce
-                         (fn [c [ss i]]
-                           (reduce
-                            #(if (nil? (%1 %2))
-                               (assoc %1 %2 i)
-                               %1)
-                            c
-                            ss))
-                         {}
-                         (map vector lhs-symbs (range)))
-        rhs-first-occur (reduce
-                         (fn [c [ss i]]
-                           (reduce
-                            #(if (nil? (%1 %2))
-                               (assoc %1 %2 i)
-                               %1)
-                            c
-                            ss))
-                         {}
-                         (map vector rhs-symbss (range)))
-        rkeys (reduce
-               (fn [c [symb i]]
-                 (let [rhs-occur (rhs-first-occur symb)]
-                   (if (and
-                        (not (nil? rhs-occur))
-                        (>= i rhs-occur))
-                     (conj c symb)
-                     c)))
-               []
-               lhs-first-occur)
-        rkeys (filter #(not (non-rkeys (keyword %))) rkeys)]
-    rkeys))
-
-(defn analyze
-  ([p] (analyze p nil))
-  ([p rkeys?]
-   (let [[f & r] p
-         symmaps (map analyze-line r)
-         lhs-symbs (mapv :lhs symmaps)
-         rhs-symbs (mapv :rhs symmaps)
-         rkeys (when rkeys? (get-rewrite-keys lhs-symbs rhs-symbs))
-         basevars (if rkeys?
-                    (if (= :per-pixel rkeys?)
-                      (into basevarset (pool-vars rkeys?))
-                      (into globalvarset (pool-vars rkeys?)))
-                    basevarset)
-         user-vars (into
-                     (reduce
-                       #(into %1 (%2 :lhs))
-                       #{}
-                       symmaps)
-                     (reduce
-                       #(into %1 (%2 :rhs))
-                       #{}
-                       symmaps))
-         user-vars (filter #(nil? (basevars (keyword %))) user-vars)]
-     {:lhs lhs-symbs
-      :rhs rhs-symbs
-      :rkeys rkeys
-      :user-vars user-vars})))
 
 (defn emit
   ([l] (emit l ";"))
