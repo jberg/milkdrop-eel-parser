@@ -77,8 +77,8 @@
                :ob_size :ob_r :ob_g :ob_b :ob_a
                :ib_size :ib_r :ib_g :ib_b :ib_a
                :mv_x :mv_y :mv_dx :mv_dy :mv_l :mv_r :mv_g :mv_b :mv_a
-               :b1n :b2n :b3n :b1x :b2x :b3x :b1ed
-               :x :y :rad :ang]
+               :b1n :b2n :b3n :b1x :b2x :b3x :b1ed]
+   :per-pixel [:x :y :rad :ang]
    :per-shape-frame [:r :g :b :a :r2 :g2 :b2 :a2
                      :x :y :rad :ang
                      :border_r :border_g :border_b :border_a
@@ -185,8 +185,8 @@
 
 (defn analyze
   [p eq-type]
-   (let [eq-type-vars (if (or (= eq-type :per-pixel) (= eq-type :per-frame))
-                        (pool-vars :per-frame)
+   (let [eq-type-vars (if (= eq-type :per-pixel)
+                        (into (pool-vars :per-frame) (pool-vars :per-pixel))
                         (pool-vars eq-type))
          basevars (into globalvarset eq-type-vars)
          user-vars (map correct-basevar (get-symbols p))
