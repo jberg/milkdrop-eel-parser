@@ -188,7 +188,7 @@
    (let [eq-type-vars (if (= eq-type :per-pixel)
                         (into (pool-vars :per-frame) (pool-vars :per-pixel))
                         (pool-vars eq-type))
-         basevars (into globalvarset eq-type-vars)
+         basevars (into globalvarset (into (keys funmap) eq-type-vars))
          user-vars (map correct-basevar (get-symbols p))
          user-vars (filter #(nil? (basevars (keyword %))) user-vars)]
      {:user-vars user-vars}))
