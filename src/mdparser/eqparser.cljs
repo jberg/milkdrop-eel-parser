@@ -213,8 +213,8 @@
     n))
 
 (defn emit
-  ([l] (emit l ";"))
-  ([l line-ending]
+  ([version l] (emit version l ";"))
+  ([version l line-ending]
   (let [[f & r] l
         return-last-thunk (fn [statements]
                             (if (> (count statements) 1)
