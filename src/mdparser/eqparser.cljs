@@ -34,6 +34,9 @@
    :above "above"
    :below "below"})
 
+(def funmapv1
+  (into funmap {:rand "randint"}))
+
 (def varmap
   {:frating :rating
    :fgammaadj :gammaadj
@@ -301,7 +304,9 @@
       :funcall (let [[is-neg-top r] (remove-leading-negs r)
                      [fname & args] r
                      [is-neg fname] (remove-leading-negs (rest fname))
-                     f (funmap (keyword (.toLowerCase (first fname))))
+                     f (if (== version 1)
+                         (funmapv1 (keyword (.toLowerCase (first fname))))
+                         (funmap (keyword (.toLowerCase (first fname)))))
                      as (clojure.string/join ", " (map #(emit % "") args))]
                  (if (nil? f)
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
