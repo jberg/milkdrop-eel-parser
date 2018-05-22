@@ -305,4 +305,5 @@
                      as (clojure.string/join ", " (map #(emit % "") args))]
                  (if (nil? f)
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
-                   (str (when (or is-neg-top is-neg) "-") f "(" as ")")))))))
+                   (str (when (and (or is-neg-top is-neg) (not (and is-neg-top is-neg))) "-")
+                        f "(" as ")")))))))
