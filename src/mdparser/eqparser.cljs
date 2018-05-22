@@ -223,18 +223,18 @@
                             (if (> (count statements) 1)
                               (str
                                 "(function(){"
-                                (clojure.string/join " " (map #(emit %) (drop-last statements)))
-                                " return " (emit (last statements))
+                                (clojure.string/join " " (map #(emit version %) (drop-last statements)))
+                                " return " (emit version (last statements))
                                 "})()")
-                              (emit (first statements) "")))]
+                              (emit version (first statements) "")))]
     (case f
-      :PROGRAM (clojure.string/join " " (map emit r))
-      :STATEMENT (emit (first r))
+      :PROGRAM (clojure.string/join " " (map #(emit version %) r))
+      :STATEMENT (emit version (first r))
       :ASSIGN (let [[rhs-neg r] (if (> (count r) 3)
                                        (remove-trailing-negs r)
                                        [nil r])
                     [lhs op rhs] r]
-                (str (emit lhs "") "" op "" (when rhs-neg "-") (emit rhs "") line-ending))
+                (str (emit version lhs "") "" op "" (when rhs-neg "-") (emit version rhs "") line-ending))
       (:exec2 :exec3) (return-last-thunk r)
       :while (let [idx-var (gensym "mdparser_idx")
                    count-var (gensym "mdparser_count")]
@@ -244,14 +244,14 @@
                  "var " count-var  "=0;"
                  "do{"
                  count-var "+=1;"
-                 idx-var "=" (emit (first r))
+                 idx-var "=" (emit version (first r))
                  "}while(" idx-var "!==0&&" count-var "<1048576);"
                  "}())" line-ending))
       :loop (let [[c comma & s] r
                   idx-var (gensym "mdparser_idx")]
               (str
-                "for(var " idx-var "=0;" idx-var "<" (emit c "") ";" idx-var "++){"
-                (clojure.string/join " " (map emit s))
+                "for(var " idx-var "=0;" idx-var "<" (emit version c "") ";" idx-var "++){"
+                (clojure.string/join " " (map #(emit version %) s))
                 "}"))
       (:bitwise
        :add-sub
@@ -265,10 +265,10 @@
                        (str ({"/" "div"
                               "%" "mod"
                               "|" "bitor"
-                              "&" "bitand"} op) "(" (when lhs-neg "-") (emit lhs "") "," (when rhs-neg "-") (emit rhs "") ")")
-                       (str "(" (when lhs-neg "-") (emit lhs "") op (when rhs-neg "-") (emit rhs "") ")")))
+                              "&" "bitand"} op) "(" (when lhs-neg "-") (emit version lhs "") "," (when rhs-neg "-") (emit version rhs "") ")")
+                       (str "(" (when lhs-neg "-") (emit version lhs "") op (when rhs-neg "-") (emit version rhs "") ")")))
       :NUMBER (let [[is-neg r] (remove-leading-negs r)]
-                (str (when is-neg "-") (emit (last r) "")))
+                (str (when is-neg "-") (emit version (last r) "")))
       :DECIMAL (if (== (count r) 3)
                  (let [[lhs _ rhs] r]
                    (str (trim-leading-zero lhs) "." rhs))
@@ -284,20 +284,20 @@
                   (str (when is-neg "-") "bnot(a['" sname "'])")
                   (str (when is-neg "-") "a['" sname "']")))
       :BUFFER (let [[is-neg r] (remove-leading-negs r)]
-                (str (when is-neg "-") "a['" (first r) "'][" (emit (second r) "") "]"))
+                (str (when is-neg "-") "a['" (first r) "'][" (emit version (second r) "") "]"))
       :condop (last r)
       :cond (let [[lhs c rhs] r]
               (str
                 "(("
-                (emit lhs "")
-                (emit c "")
-                (emit rhs "")
+                (emit version lhs "")
+                (emit version c "")
+                (emit version rhs "")
                 ")?1:0)"))
       :if (let [[is-neg r] (remove-leading-negs r)
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
               (when is-neg "-")
-              "((" (emit (first c) "") ")?"
+              "((" (emit version (first c) "") ")?"
               "(" (return-last-thunk t) ")"
               ":"
               "(" (return-last-thunk f) "))" line-ending))
@@ -307,7 +307,7 @@
                      f (if (== version 1)
                          (funmapv1 (keyword (.toLowerCase (first fname))))
                          (funmap (keyword (.toLowerCase (first fname)))))
-                     as (clojure.string/join ", " (map #(emit % "") args))]
+                     as (clojure.string/join ", " (map #(emit version % "") args))]
                  (if (nil? f)
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
                    (str (when (and (or is-neg-top is-neg) (not (and is-neg-top is-neg))) "-")
