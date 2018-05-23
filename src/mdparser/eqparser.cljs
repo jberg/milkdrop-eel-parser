@@ -289,12 +289,22 @@
                 (str (when is-neg "-") "a['" (first r) "'][" (emit version (second r) "") "]"))
       :condop (last r)
       :cond (let [[lhs c rhs] r]
-              (str
-                "(("
-                (emit version lhs "")
-                (emit version c "")
-                (emit version rhs "")
-                ")?1:0)"))
+              (if (or (= (last c) "==") (= (last c) "!="))
+                (str
+                  "(("
+                  "Math.abs("
+                  "(" (emit version lhs "") ")"
+                  "-"
+                  "(" (emit version rhs "") "))<" MDEPSILON
+                  (if (= (last c) "==")
+                    ")?1:0)"
+                    ")?0:1)"))
+                (str
+                  "(("
+                  (emit version lhs "")
+                  (emit version c "")
+                  (emit version rhs "")
+                  ")?1:0)")))
       :if (let [[is-neg r] (remove-leading-negs r)
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
