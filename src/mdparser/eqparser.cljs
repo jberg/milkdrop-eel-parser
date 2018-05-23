@@ -215,6 +215,8 @@
     (trim-leading-zero (.substring n 1))
     n))
 
+(def MDEPSILON 0.00001)
+
 (defn emit
   ([version l] (emit version l ";"))
   ([version l line-ending]
@@ -245,7 +247,7 @@
                  "do{"
                  count-var "+=1;"
                  idx-var "=" (emit version (first r))
-                 "}while(" idx-var "!==0&&" count-var "<1048576);"
+                 "}while(Math.abs(" idx-var ")>" MDEPSILON "0&&" count-var "<1048576);"
                  "}())" line-ending))
       :loop (let [[c comma & s] r
                   idx-var (gensym "mdparser_idx")]
@@ -297,7 +299,7 @@
                 [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))]
             (str
               (when is-neg "-")
-              "((" (emit version (first c) "") ")?"
+              "((Math.abs(" (emit version (first c) "") ")>" MDEPSILON ")?"
               "(" (return-last-thunk t) ")"
               ":"
               "(" (return-last-thunk f) "))" line-ending))
