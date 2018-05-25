@@ -194,7 +194,7 @@
          basevars (into globalvarset (into (keys funmap) eq-type-vars))
          user-vars (map correct-basevar (get-symbols p))
          user-vars (filter #(nil? (basevars (keyword %))) user-vars)]
-     {:user-vars user-vars}))
+     {:user-vars (into #{} user-vars)}))
 
 (defn remove-leading-negs
   [x]
