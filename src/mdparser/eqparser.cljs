@@ -286,7 +286,7 @@
                   (str (when is-neg "-") "bnot(a['" sname "'])")
                   (str (when is-neg "-") "a['" sname "']")))
       :BUFFER (let [[is-neg r] (remove-leading-negs r)]
-                (str (when is-neg "-") "a['" (first r) "'][" (emit version (second r) "") "]"))
+                (str (when is-neg "-") "a['" (first r) "'][Math.floor(" (emit version (second r) "") ")]"))
       :condop (last r)
       :cond (let [[lhs c rhs] r]
               (if (or (= (last c) "==") (= (last c) "!="))
