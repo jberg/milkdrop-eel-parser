@@ -15,6 +15,11 @@
                            :output-to "resources/public/js/compiled/mdparser.js"
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp true}}
+               {:id "test"
+                :source-paths ["src" "test"]
+                :compiler {:output-to "resources/test/js/compiled/mdparser-tests.js"
+                           :optimizations :whitespace
+                           :pretty-print true}}
                {:id "min"
                 :source-paths ["src"]
                 :compiler {:main "mdparser.core"
@@ -25,4 +30,8 @@
                            :output-wrapper false
                            :parallel-build true
                            :checked-arrays :warn}
-                :notify-command ["release/wrap_release.sh"]}]})
+                :notify-command ["release/wrap_release.sh"]}]
+              :test-commands {"test" ["phantomjs"
+                                      "resources/test/test.js"
+                                      "resources/test/test.html"]}}
+  :hooks [leiningen.cljsbuild])
