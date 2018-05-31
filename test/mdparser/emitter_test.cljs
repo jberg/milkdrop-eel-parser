@@ -20,8 +20,8 @@
 
 (deftest test-functions
   (testing "testing basic functions"
-    (is (= (emitter/emit 1 (parser/parse "x = randint(y);"))
-           "a['x']=rand(a['y']);"))
+    (is (= (emitter/emit 1 (parser/parse "x = rand(y);"))
+           "a['x']=randint(a['y']);"))
     (is (= (emitter/emit 2 (parser/parse "x = rand(y);"))
            "a['x']=rand(a['y']);"))
     (is (= (emitter/emit 2 (parser/parse "x = pow(y, z);"))
