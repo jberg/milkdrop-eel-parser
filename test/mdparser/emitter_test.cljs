@@ -1,4 +1,4 @@
-(ns mdparser-tests.emitter
+(ns mdparser-test.emitter
   (:require [cljs.test :refer-macros [deftest testing is]]
             [mdparser.parser :as parser]
             [mdparser.emitter :as emitter]))

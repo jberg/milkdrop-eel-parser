@@ -35,7 +35,7 @@ page.open(url, function (status) {
   console.log("Running test.");
 
   var result = page.evaluate(function() {
-    return mdparser_tests.test_runner.run();
+    return mdparser_test.test_runner.run();
   });
 
   // NOTE: PhantomJS 1.4.0 has a bug that prevents the exit codes
