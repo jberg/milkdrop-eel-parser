@@ -50,3 +50,59 @@
            [:PROGRAM
             [:STATEMENT
               [:ASSIGN [:SYMBOL "x"] "=" [:mult-div [:add-sub [:SYMBOL "y"] "+" [:SYMBOL "z"]] "*" [:SYMBOL "w"]]]]]))))
+
+(deftest test-functions
+  (testing "functons"
+    (is (= (parser/parse "x = rand(y);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:funcall [:SYMBOL "rand"] [:SYMBOL "y"]]]]]))
+    (is (= (parser/parse "x = pow(y, z);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:funcall [:SYMBOL "pow"] [:SYMBOL "y"] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = floor(y);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:funcall [:SYMBOL "floor"] [:SYMBOL "y"]]]]]))
+    (is (= (parser/parse "x = max(y, z);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:funcall [:SYMBOL "max"] [:SYMBOL "y"] [:SYMBOL "z"]]]]]))))
+
+(deftest test-if
+  (testing "simple if"
+    (is (= (parser/parse "x = if(x,y,z);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN
+                 [:SYMBOL "x"]
+                 "="
+                 [:if
+                   [:SYMBOL "x"]
+                   [:comma]
+                   [:SYMBOL "y"]
+                   [:comma]
+                   [:SYMBOL "z"]]]]])))
+  (testing "complex if"
+    (is (= (parser/parse "x = if(x / 3,y = w + c; y,z = w + k; w - 8);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN
+                 [:SYMBOL "x"]
+                 "="
+                 [:if
+                   [:mult-div [:SYMBOL "x"] "/" [:NUMBER [:INTEGER "3"]]]
+                   [:comma]
+                   [:ASSIGN [:SYMBOL "y"] "=" [:add-sub [:SYMBOL "w"] "+" [:SYMBOL "c"]]]
+                   [:SYMBOL "y"]
+                   [:comma]
+                   [:ASSIGN [:SYMBOL "z"] "=" [:add-sub [:SYMBOL "w"] "+" [:SYMBOL "k"]]]
+                   [:add-sub [:SYMBOL "w"] "-" [:NUMBER [:INTEGER "8"]]]]]]]))))
+
+(deftest test-numbers
+  (testing "numbers"
+    (is (= (parser/parse "x = .1 + 1. + 1.1 + 1;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:add-sub [:add-sub [:add-sub [:NUMBER [:DECIMAL "." "1"]] "+" [:NUMBER [:DECIMAL "1" "."]]] "+" [:NUMBER [:DECIMAL "1" "." "1"]]] "+" [:NUMBER [:INTEGER "1"]]]]]]))))

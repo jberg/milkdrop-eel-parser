@@ -30,3 +30,16 @@
            "a['x']=Math.floor(a['y']);"))
     (is (= (emitter/emit 2 (parser/parse "x = max(y, z);"))
            "a['x']=Math.max(a['y'], a['z']);"))))
+
+(deftest test-if
+  (testing "simple if"
+    (is (= (emitter/emit 2 (parser/parse "x = if(x,y,z);"))
+           "a['x']=((Math.abs(a['x'])>0.00001)?(a['y']):(a['z']));")))
+  (testing "complex if"
+    (is (= (emitter/emit 2 (parser/parse "x = if(x / 3,y = w + c; y,z = w + k; w - 8);"))
+            "a['x']=((Math.abs(div(a['x'],3))>0.00001)?((function(){a['y']=(a['w']+a['c']); return a['y']})()):((function(){a['z']=(a['w']+a['k']); return (a['w']-8)})()));"))))
+
+(deftest test-numbers
+  (testing "numbers"
+    (is (= (emitter/emit 2 (parser/parse "x = .1 + 1. + 1.1 + 1;"))
+           "a['x']=(((0.1+1.0)+1.1)+1);"))))
