@@ -3,3 +3,4 @@
 /resources/test/js/compiled/
 /release/md-parser.min.js
 figwheel_server.log
+.lein-failures
