@@ -102,7 +102,19 @@
 
 (deftest test-numbers
   (testing "numbers"
-    (is (= (parser/parse "x = .1 + 1. + 1.1 + 1;")
+    (is (= (parser/parse "x = 1;")
            [:PROGRAM
              [:STATEMENT
-               [:ASSIGN [:SYMBOL "x"] "=" [:add-sub [:add-sub [:add-sub [:NUMBER [:DECIMAL "." "1"]] "+" [:NUMBER [:DECIMAL "1" "."]]] "+" [:NUMBER [:DECIMAL "1" "." "1"]]] "+" [:NUMBER [:INTEGER "1"]]]]]]))))
+               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:INTEGER "1"]]]]]))
+    (is (= (parser/parse "x = 1.0;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "1" "." "0"]]]]]))
+    (is (= (parser/parse "x = 1.;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "1" "."]]]]]))
+    (is (= (parser/parse "x = .1;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "." "1"]]]]]))))

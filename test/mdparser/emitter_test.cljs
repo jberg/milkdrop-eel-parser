@@ -41,5 +41,11 @@
 
 (deftest test-numbers
   (testing "numbers"
-    (is (= (emitter/emit 2 (parser/parse "x = .1 + 1. + 1.1 + 1;"))
-           "a['x']=(((0.1+1.0)+1.1)+1);"))))
+    (is (= (emitter/emit 2 (parser/parse "x = 1;"))
+           "a['x']=1;"))
+    (is (= (emitter/emit 2 (parser/parse "x = 1.0;"))
+           "a['x']=1.0;"))
+    (is (= (emitter/emit 2 (parser/parse "x = 1.;"))
+           "a['x']=1.0;"))
+    (is (= (emitter/emit 2 (parser/parse "x = .1;"))
+           "a['x']=0.1;"))))
