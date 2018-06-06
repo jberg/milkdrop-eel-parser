@@ -102,19 +102,37 @@
 
 (deftest test-numbers
   (testing "numbers"
-    (is (= (parser/parse "x = 1;")
-           [:PROGRAM
-             [:STATEMENT
-               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:INTEGER "1"]]]]]))
-    (is (= (parser/parse "x = 1.0;")
-           [:PROGRAM
-             [:STATEMENT
-               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "1" "." "0"]]]]]))
-    (is (= (parser/parse "x = 1.;")
-           [:PROGRAM
-             [:STATEMENT
-               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "1" "."]]]]]))
-    (is (= (parser/parse "x = .1;")
-           [:PROGRAM
-             [:STATEMENT
-               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "." "1"]]]]]))))
+    (testing "integers"
+      (is (= (parser/parse "x = 1;")
+             [:PROGRAM
+               [:STATEMENT
+                 [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:INTEGER "1"]]]]]))
+      (is (= (parser/parse "x = 123;")
+             [:PROGRAM
+               [:STATEMENT
+                 [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:INTEGER "123"]]]]]))
+      (is (= (parser/parse "x = 001;")
+             [:PROGRAM
+               [:STATEMENT
+                 [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:INTEGER "001"]]]]])))
+    (testing "decimals"
+      (is (= (parser/parse "x = 1.0;")
+             [:PROGRAM
+               [:STATEMENT
+                 [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "1" "." "0"]]]]]))
+      (is (= (parser/parse "x = 12.345;")
+             [:PROGRAM
+               [:STATEMENT
+                 [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "12" "." "345"]]]]]))
+      (is (= (parser/parse "x = 1.;")
+             [:PROGRAM
+               [:STATEMENT
+                 [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "1" "."]]]]]))
+      (is (= (parser/parse "x = .1;")
+             [:PROGRAM
+               [:STATEMENT
+                 [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "." "1"]]]]]))
+      (is (= (parser/parse "x = 001.234;")
+             [:PROGRAM
+               [:STATEMENT
+                 [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "001" "." "234"]]]]])))))

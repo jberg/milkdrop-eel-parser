@@ -41,11 +41,26 @@
 
 (deftest test-numbers
   (testing "numbers"
-    (is (= (emitter/emit 2 (parser/parse "x = 1;"))
-           "a['x']=1;"))
-    (is (= (emitter/emit 2 (parser/parse "x = 1.0;"))
-           "a['x']=1.0;"))
-    (is (= (emitter/emit 2 (parser/parse "x = 1.;"))
-           "a['x']=1.0;"))
-    (is (= (emitter/emit 2 (parser/parse "x = .1;"))
-           "a['x']=0.1;"))))
+    (testing "integers"
+      (is (= (emitter/emit 2 (parser/parse "x = 1;"))
+             "a['x']=1;"))
+      (is (= (emitter/emit 2 (parser/parse "x = 123;"))
+             "a['x']=123;"))
+      (is (= (emitter/emit 2 (parser/parse "x = 001;"))
+             "a['x']=1;")))
+    (testing "decimals"
+      (is (= (emitter/emit 2 (parser/parse "x = 1.0;"))
+             "a['x']=1.0;"))
+      (is (= (emitter/emit 2 (parser/parse "x = 12.345;"))
+             "a['x']=12.345;"))
+      (is (= (emitter/emit 2 (parser/parse "x = 1.;"))
+             "a['x']=1.0;"))
+      (is (= (emitter/emit 2 (parser/parse "x = .1;"))
+             "a['x']=0.1;"))
+      (is (= (emitter/emit 2 (parser/parse "x = 001.234;"))
+             "a['x']=1.234;")))))
+
+(deftest test-misc
+  (testing "case insensitive"
+    (is (= (emitter/emit 2 (parser/parse "x = RAND(Y);"))
+           "a['x']=rand(a['y']);"))))
