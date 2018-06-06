@@ -1,5 +1,6 @@
 (ns mdparser.parser
-  (:require [instaparse.core :as insta]))
+  (:require [instaparse.core :as insta]
+            [clojure.string]))
 
 (def comment-regex #"//[\s\S]*")
 
@@ -69,7 +70,7 @@
   (let [parsed (insta/parse parser input :optimize :memory)]
     (if (insta/failure? parsed)
       (throw (ex-info (pr-str (insta/get-failure parsed)) (clj->js {:input input})))
-      (insta/transform {:SYMBOL (fn [& xs] (into [:SYMBOL] (conj (vec (drop-last xs)) (.toLowerCase (last xs)))))}
+      (insta/transform {:SYMBOL (fn [& xs] (into [:SYMBOL] (conj (vec (drop-last xs)) (clojure.string/lower-case (last xs)))))}
                        parsed))))
 
 (defn parse

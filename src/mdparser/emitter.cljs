@@ -250,8 +250,8 @@
                      [fname & args] r
                      [is-neg fname] (remove-leading-negs (rest fname))
                      f (if (== version 1)
-                         (funmapv1 (keyword (.toLowerCase (first fname))))
-                         (funmap (keyword (.toLowerCase (first fname)))))
+                         (funmapv1 (keyword (clojure.string/lower-case (first fname))))
+                         (funmap (keyword (clojure.string/lower-case (first fname)))))
                      as (clojure.string/join ", " (map #(emit version % "") args))]
                  (if (nil? f)
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
