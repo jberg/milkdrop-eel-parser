@@ -1,5 +1,6 @@
 (ns mdparser.emitter
-  (:require [clojure.set]))
+  (:require [clojure.set]
+            [clojure.string]))
 
 ; freembuf
 ; memcpy
@@ -141,9 +142,9 @@
 (defn trim-leading-zero
   [n]
   (if (and (> (count n) 1)
-           (.startsWith n "0")
-           (not (.startsWith n "0.")))
-    (trim-leading-zero (.substring n 1))
+           (clojure.string/starts-with? n "0")
+           (not (clojure.string/starts-with? n "0.")))
+    (trim-leading-zero (subs n 1))
     n))
 
 (def MDEPSILON 0.00001)
@@ -205,12 +206,12 @@
                 (str (when is-neg "-") (emit version (last r) "")))
       :DECIMAL (if (== (count r) 3)
                  (let [[lhs _ rhs] r]
-                   (str (trim-leading-zero lhs) "." rhs))
+                   (trim-leading-zero (str lhs "." rhs)))
                  (let [[lhs rhs] r]
                    (if (= lhs ".")
                      (str "0." rhs)
-                     (str (trim-leading-zero lhs) ".0"))))
-      :INTEGER (trim-leading-zero (first r))
+                     (trim-leading-zero (str lhs ".0")))))
+      :INTEGER (trim-leading-zero (str (first r)))
       :SYMBOL (let [[is-neg r] (remove-leading-negs r)
                     sname (last r)
                     sname (correct-basevar sname)]
