@@ -28,7 +28,39 @@
            [:PROGRAM
             [:STATEMENT
               [:ASSIGN [:SYMBOL "x"] "=" [:bitwise [:SYMBOL "y"] "|" [:SYMBOL "z"]]]]])))
-
+  (testing "tesing conditional operators"
+    (is (= (parser/parse "x = y == z;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop "=="] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = y != z;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop "!="] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = y > z;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop ">"] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = y < z;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop "<"] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = y >= z;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop ">="] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = y <= z;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop "<="] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = y && z;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop "&&"] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = y || z;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop "||"] [:SYMBOL "z"]]]]])))
   (testing "testing operator precedence"
     (is (= (parser/parse "x = y + z | w;")
            [:PROGRAM
@@ -49,7 +81,19 @@
     (is (= (parser/parse "x = (y + z) * w;")
            [:PROGRAM
             [:STATEMENT
-              [:ASSIGN [:SYMBOL "x"] "=" [:mult-div [:add-sub [:SYMBOL "y"] "+" [:SYMBOL "z"]] "*" [:SYMBOL "w"]]]]]))))
+              [:ASSIGN [:SYMBOL "x"] "=" [:mult-div [:add-sub [:SYMBOL "y"] "+" [:SYMBOL "z"]] "*" [:SYMBOL "w"]]]]]))
+    (is (= (parser/parse "x = y < z + w;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:SYMBOL "y"] [:condop "<"] [:add-sub [:SYMBOL "z"] "+" [:SYMBOL "w"]]]]]]))
+    (is (= (parser/parse "x = y + z > w;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:add-sub [:SYMBOL "y"] "+" [:SYMBOL "z"]] [:condop ">"] [:SYMBOL "w"]]]]]))
+    (is (= (parser/parse "x = y + z > w * h;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:cond [:add-sub [:SYMBOL "y"] "+" [:SYMBOL "z"]] [:condop ">"] [:mult-div [:SYMBOL "w"] "*" [:SYMBOL "h"]]]]]]))))
 
 (deftest test-functions
   (testing "functons"

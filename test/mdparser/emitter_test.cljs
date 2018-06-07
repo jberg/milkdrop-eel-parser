@@ -16,7 +16,24 @@
     (is (= (emitter/emit 2 (parser/parse "x = y & z;"))
            "a['x']=bitand(a['y'],a['z']);"))
     (is (= (emitter/emit 2 (parser/parse "x = y | z;"))
-           "a['x']=bitor(a['y'],a['z']);"))))
+           "a['x']=bitor(a['y'],a['z']);")))
+  (testing "tesing conditional operators"
+    (is (= (emitter/emit 2 (parser/parse "x = y == z;"))
+           "a['x']=((Math.abs((a['y'])-(a['z']))<0.00001)?1:0);"))
+    (is (= (emitter/emit 2 (parser/parse "x = y != z;"))
+           "a['x']=((Math.abs((a['y'])-(a['z']))<0.00001)?0:1);"))
+    (is (= (emitter/emit 2 (parser/parse "x = y < z;"))
+           "a['x']=((a['y']<a['z'])?1:0);"))
+    (is (= (emitter/emit 2 (parser/parse "x = y > z;"))
+           "a['x']=((a['y']>a['z'])?1:0);"))
+    (is (= (emitter/emit 2 (parser/parse "x = y <= z;"))
+           "a['x']=((a['y']<=a['z'])?1:0);"))
+    (is (= (emitter/emit 2 (parser/parse "x = y >= z;"))
+           "a['x']=((a['y']>=a['z'])?1:0);"))
+    (is (= (emitter/emit 2 (parser/parse "x = y && z;"))
+           "a['x']=((a['y']&&a['z'])?1:0);"))
+    (is (= (emitter/emit 2 (parser/parse "x = y || z;"))
+           "a['x']=((a['y']||a['z'])?1:0);"))))
 
 (deftest test-functions
   (testing "testing basic functions"
