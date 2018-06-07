@@ -100,6 +100,11 @@
     (is (= (emitter/emit 2 (parser/parse "x = --(y * z);"))
            "a['x']=(a['y']*a['z']);"))))
 
+(deftest test-not
+  (testing "not"
+    (is (= (emitter/emit 2 (parser/parse "x = !y;"))
+           "a['x']=bnot(a['y']);"))))
+
 (deftest test-misc
   (testing "case insensitive"
     (is (= (emitter/emit 2 (parser/parse "x = RAND(Y);"))

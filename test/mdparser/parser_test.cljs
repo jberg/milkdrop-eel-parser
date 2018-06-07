@@ -215,3 +215,10 @@
            [:PROGRAM
              [:STATEMENT
                [:ASSIGN [:SYMBOL "x"] "=" [:NEGATIVE] [:mult-div [:SYMBOL "y"] "*" [:SYMBOL "z"]]]]]))))
+
+(deftest test-not
+  (testing "not"
+    (is (= (parser/parse "x = !y;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:SYMBOL [:NOT] "y"]]]]))))
