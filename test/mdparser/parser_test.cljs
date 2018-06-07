@@ -95,6 +95,29 @@
              [:STATEMENT
                [:ASSIGN [:SYMBOL "x"] "=" [:cond [:add-sub [:SYMBOL "y"] "+" [:SYMBOL "z"]] [:condop ">"] [:mult-div [:SYMBOL "w"] "*" [:SYMBOL "h"]]]]]]))))
 
+(deftest test-assign-op
+  (testing "assign ops"
+    (is (= (parser/parse "x += y;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "+=" [:SYMBOL "y"]]]]))
+    (is (= (parser/parse "x -= y;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "-=" [:SYMBOL "y"]]]]))
+    (is (= (parser/parse "x *= y;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "*=" [:SYMBOL "y"]]]]))
+    (is (= (parser/parse "x /= y;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "/=" [:SYMBOL "y"]]]]))
+    (is (= (parser/parse "x %= y;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "%=" [:SYMBOL "y"]]]]))))
+
 (deftest test-functions
   (testing "functons"
     (is (= (parser/parse "x = rand(y);")

@@ -48,6 +48,19 @@
     (is (= (emitter/emit 2 (parser/parse "x = max(y, z);"))
            "a['x']=Math.max(a['y'], a['z']);"))))
 
+(deftest test-assign-op
+  (testing "assign ops"
+    (is (= (emitter/emit 2 (parser/parse "x += y;"))
+           "a['x']+=a['y'];"))
+    (is (= (emitter/emit 2 (parser/parse "x -= y;"))
+           "a['x']-=a['y'];"))
+    (is (= (emitter/emit 2 (parser/parse "x *= y;"))
+           "a['x']*=a['y'];"))
+    (is (= (emitter/emit 2 (parser/parse "x /= y;"))
+           "a['x']/=a['y'];"))
+    (is (= (emitter/emit 2 (parser/parse "x %= y;"))
+           "a['x']%=a['y'];"))))
+
 (deftest test-if
   (testing "simple if"
     (is (= (emitter/emit 2 (parser/parse "x = if(x,y,z);"))
