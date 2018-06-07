@@ -180,3 +180,38 @@
              [:PROGRAM
                [:STATEMENT
                  [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:DECIMAL "001" "." "234"]]]]])))))
+
+(deftest test-negative
+  (testing "negative"
+    (is (= (parser/parse "x = -1;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:NEGATIVE] [:INTEGER "1"]]]]]))
+    (is (= (parser/parse "x = --1;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:NUMBER [:NEGATIVE] [:NEGATIVE] [:INTEGER "1"]]]]]))
+    (is (= (parser/parse "x = 1--1;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:add-sub [:NUMBER [:INTEGER "1"]] "-" [:NUMBER [:NEGATIVE] [:INTEGER "1"]]]]]]))
+    (is (= (parser/parse "x = 1---1;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:add-sub [:NUMBER [:INTEGER "1"]] "-" [:NUMBER [:NEGATIVE] [:NEGATIVE] [:INTEGER "1"]]]]]]))
+    (is (= (parser/parse "x = -y;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:SYMBOL [:NEGATIVE] "y"]]]]))
+    (is (= (parser/parse "x = --y;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:SYMBOL [:NEGATIVE] [:NEGATIVE] "y"]]]]))
+    (is (= (parser/parse "x = -if(x,y,z);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:if [:NEGATIVE] [:SYMBOL "x"] [:comma] [:SYMBOL "y"] [:comma] [:SYMBOL "z"]]]]]))
+    (is (= (parser/parse "x = -(y * z);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:NEGATIVE] [:mult-div [:SYMBOL "y"] "*" [:SYMBOL "z"]]]]]))))

@@ -77,6 +77,29 @@
       (is (= (emitter/emit 2 (parser/parse "x = 001.234;"))
              "a['x']=1.234;")))))
 
+(deftest test-negative
+  (testing "negative"
+    (is (= (emitter/emit 2 (parser/parse "x = -1;"))
+           "a['x']=-1;"))
+    (is (= (emitter/emit 2 (parser/parse "x = --1;"))
+           "a['x']=1;"))
+    (is (= (emitter/emit 2 (parser/parse "x = ---1;"))
+           "a['x']=-1;"))
+    (is (= (emitter/emit 2 (parser/parse "x = 1--1;"))
+           "a['x']=(1--1);"))
+    (is (= (emitter/emit 2 (parser/parse "x = 1---1;"))
+           "a['x']=(1-1);"))
+    (is (= (emitter/emit 2 (parser/parse "x = -y;"))
+           "a['x']=-a['y'];"))
+    (is (= (emitter/emit 2 (parser/parse "x = --y;"))
+           "a['x']=a['y'];"))
+    (is (= (emitter/emit 2 (parser/parse "x = -if(x,y,z);"))
+            "a['x']=-((Math.abs(a['x'])>0.00001)?(a['y']):(a['z']));"))
+    (is (= (emitter/emit 2 (parser/parse "x = -(y * z);"))
+           "a['x']=-(a['y']*a['z']);"))
+    (is (= (emitter/emit 2 (parser/parse "x = --(y * z);"))
+           "a['x']=(a['y']*a['z']);"))))
+
 (deftest test-misc
   (testing "case insensitive"
     (is (= (emitter/emit 2 (parser/parse "x = RAND(Y);"))
