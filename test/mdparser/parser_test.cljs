@@ -233,3 +233,23 @@
            [:PROGRAM
              [:STATEMENT
                [:ASSIGN [:SYMBOL "x"] "=" [:BUFFER "megabuf" [:add-sub [:SYMBOL "y"] "+" [:SYMBOL "z"]]]]]]))))
+
+(deftest test-multi-statement
+  (testing "multi line / multi on single line"
+    (is (= (parser/parse "x=y;y=z;z=w;")
+           [:PROGRAM
+             [:STATEMENT [:ASSIGN [:SYMBOL "x"] "=" [:SYMBOL "y"]]]
+             [:STATEMENT [:ASSIGN [:SYMBOL "y"] "=" [:SYMBOL "z"]]]
+             [:STATEMENT [:ASSIGN [:SYMBOL "z"] "=" [:SYMBOL "w"]]]]))
+    (is (= (parser/parse "x=y;
+                          y=z;
+                          z=w;")
+           [:PROGRAM
+             [:STATEMENT [:ASSIGN [:SYMBOL "x"] "=" [:SYMBOL "y"]]]
+             [:STATEMENT [:ASSIGN [:SYMBOL "y"] "=" [:SYMBOL "z"]]]
+             [:STATEMENT [:ASSIGN [:SYMBOL "z"] "=" [:SYMBOL "w"]]]]))
+    (is (= (parser/parse "x=mid
+                            varname + 3;")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:add-sub [:SYMBOL "midvarname"] "+" [:NUMBER [:INTEGER "3"]]]]]]))))

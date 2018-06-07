@@ -112,6 +112,18 @@
     (is (= (emitter/emit 2 (parser/parse "x = megabuf(y+z);"))
            "a['x']=a['megabuf'][Math.floor((a['y']+a['z']))];"))))
 
+(deftest test-multi-statement
+  (testing "multi line / multi on single line"
+    (is (= (emitter/emit 2 (parser/parse "x=y;y=z;z=w;"))
+           "a['x']=a['y']; a['y']=a['z']; a['z']=a['w'];"))
+    (is (= (emitter/emit 2 (parser/parse "x=y;
+                                          y=z;
+                                          z=w;"))
+           "a['x']=a['y']; a['y']=a['z']; a['z']=a['w'];"))
+    (is (= (emitter/emit 2 (parser/parse "x=mid
+                                            varname + 3;"))
+           "a['x']=(a['midvarname']+3);"))))
+
 (deftest test-misc
   (testing "case insensitive"
     (is (= (emitter/emit 2 (parser/parse "x = RAND(Y);"))
