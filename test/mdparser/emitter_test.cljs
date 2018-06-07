@@ -105,6 +105,13 @@
     (is (= (emitter/emit 2 (parser/parse "x = !y;"))
            "a['x']=bnot(a['y']);"))))
 
+(deftest test-buffers
+  (testing "buffers"
+    (is (= (emitter/emit 2 (parser/parse "x = gmegabuf(y);"))
+           "a['x']=a['gmegabuf'][Math.floor(a['y'])];"))
+    (is (= (emitter/emit 2 (parser/parse "x = megabuf(y+z);"))
+           "a['x']=a['megabuf'][Math.floor((a['y']+a['z']))];"))))
+
 (deftest test-misc
   (testing "case insensitive"
     (is (= (emitter/emit 2 (parser/parse "x = RAND(Y);"))

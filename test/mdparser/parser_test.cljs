@@ -222,3 +222,14 @@
            [:PROGRAM
              [:STATEMENT
                [:ASSIGN [:SYMBOL "x"] "=" [:SYMBOL [:NOT] "y"]]]]))))
+
+(deftest test-buffers
+  (testing "buffers"
+    (is (= (parser/parse "x = gmegabuf(y);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:BUFFER "gmegabuf" [:SYMBOL "y"]]]]]))
+    (is (= (parser/parse "x = megabuf(y+z);")
+           [:PROGRAM
+             [:STATEMENT
+               [:ASSIGN [:SYMBOL "x"] "=" [:BUFFER "megabuf" [:add-sub [:SYMBOL "y"] "+" [:SYMBOL "z"]]]]]]))))
