@@ -1,7 +1,9 @@
 (ns mdparser-test.test-runner
   (:require [cljs.test :refer-macros [run-tests]]
             [mdparser-test.parser]
-            [mdparser-test.emitter]))
+            [mdparser-test.emitter]
+            [mdparser-test.analyzer]
+            [mdparser-test.eval]))
 
 (enable-console-print!)
 
@@ -10,5 +12,7 @@
 (defn ^:export run
   []
   (run-tests 'mdparser-test.parser
-             'mdparser-test.emitter)
+             'mdparser-test.emitter
+             'mdparser-test.analyzer
+             'mdparser-test.eval)
   success)
