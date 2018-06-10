@@ -18,6 +18,7 @@
                {:id "test"
                 :source-paths ["src" "test"]
                 :compiler {:output-to "resources/test/js/compiled/mdparser-tests.js"
+                           :output-dir "resources/test/js/compiled/out"
                            :optimizations :whitespace
                            :pretty-print true}}
                {:id "min"
