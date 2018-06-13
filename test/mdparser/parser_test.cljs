@@ -167,6 +167,24 @@
                    [:ASSIGN [:SYMBOL "z"] "=" [:add-sub [:SYMBOL "w"] "+" [:SYMBOL "k"]]]
                    [:add-sub [:SYMBOL "w"] "-" [:NUMBER [:INTEGER "8"]]]]]]]))))
 
+(deftest test-loops
+  (testing "loop"
+    (is (= (parser/parse "loop(5,x += 1);")
+           [:PROGRAM
+             [:STATEMENT
+               [:loop
+                 [:NUMBER [:INTEGER "5"]]
+                 [:comma]
+                 [:ASSIGN [:SYMBOL "x"] "+=" [:NUMBER [:INTEGER "1"]]]]]]))
+    (is (= (parser/parse "loop(x,y += 1; z += y * y;);")
+           [:PROGRAM
+             [:STATEMENT
+               [:loop
+                 [:SYMBOL "x"]
+                 [:comma]
+                 [:ASSIGN [:SYMBOL "y"] "+=" [:NUMBER [:INTEGER "1"]]]
+                 [:ASSIGN [:SYMBOL "z"] "+=" [:mult-div [:SYMBOL "y"] "*" [:SYMBOL "y"]]]]]]))))
+
 (deftest test-numbers
   (testing "numbers"
     (testing "integers"

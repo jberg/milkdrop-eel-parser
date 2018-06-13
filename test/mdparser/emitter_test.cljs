@@ -69,6 +69,13 @@
     (is (= (emitter/emit 2 (parser/parse "x = if(x / 3,y = w + c; y,z = w + k; w - 8);"))
             "a['x']=((Math.abs(div(a['x'],3))>0.00001)?((function(){a['y']=(a['w']+a['c']); return a['y']})()):((function(){a['z']=(a['w']+a['k']); return (a['w']-8)})()));"))))
 
+(deftest test-loops
+  (testing "loop"
+    (is (= (emitter/emit 2 (parser/parse "loop(5,x += 1);"))
+           "for(var mdparser_idx1=0;mdparser_idx1<5;mdparser_idx1++){a['x']+=1;}"))
+    (is (= (emitter/emit 2 (parser/parse "loop(x,y += 1; z += y * y;);"))
+           "for(var mdparser_idx2=0;mdparser_idx2<a['x'];mdparser_idx2++){a['y']+=1; a['z']+=(a['y']*a['y']);}"))))
+
 (deftest test-numbers
   (testing "numbers"
     (testing "integers"

@@ -119,3 +119,12 @@
              {"x" 7 "y" 7 "z" 2 "w" 3 "c" 4 "k" 5}))
       (is (= (js->clj (f (clj->js {:x 3 :y 1 :z 2 :w 3 :c 4 :k 5})))
              {"x" -5 "y" 1 "z" 8 "w" 3 "c" 4 "k" 5})))))
+
+(deftest test-loops
+  (testing "loop"
+    (let [f (create-fun (emitter/emit 2 (parser/parse "loop(5,x += 1);")))]
+      (is (= (js->clj (f (clj->js {:x 0})))
+             {"x" 5})))
+    (let [f (create-fun (emitter/emit 2 (parser/parse "loop(x,y += 1; z += y * y;);")))]
+      (is (= (js->clj (f (clj->js {:x 5 :y 0 :z 0})))
+             {"x" 5 "y" 5 "z" 55})))))
