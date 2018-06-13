@@ -101,3 +101,21 @@
     (let [f (create-fun (emitter/emit 2 (parser/parse "x %= y;")))]
       (is (= (js->clj (f (clj->js {:x 3 :y 2})))
              {"x" 1 "y" 2})))))
+
+(deftest test-if
+  (testing "simple if"
+    (let [f (create-fun (emitter/emit 2 (parser/parse "x = if(x,y,z);")))]
+      (is (= (js->clj (f (clj->js {:x 0 :y 1 :z 2})))
+             {"x" 2 "y" 1 "z" 2}))
+      (is (= (js->clj (f (clj->js {:x 0.1 :y 1 :z 2})))
+             {"x" 1 "y" 1 "z" 2}))
+      (is (= (js->clj (f (clj->js {:x -0.1 :y 1 :z 2})))
+             {"x" 1 "y" 1 "z" 2}))
+      (is (= (js->clj (f (clj->js {:x 0.0000001 :y 1 :z 2})))
+             {"x" 2 "y" 1 "z" 2}))))
+  (testing "complex if"
+    (let [f (create-fun (emitter/emit 2 (parser/parse "x = if(x - 3,y = w + c; y,z = w + k; w - 8);")))]
+      (is (= (js->clj (f (clj->js {:x 4 :y 1 :z 2 :w 3 :c 4 :k 5})))
+             {"x" 7 "y" 7 "z" 2 "w" 3 "c" 4 "k" 5}))
+      (is (= (js->clj (f (clj->js {:x 3 :y 1 :z 2 :w 3 :c 4 :k 5})))
+             {"x" -5 "y" 1 "z" 8 "w" 3 "c" 4 "k" 5})))))
