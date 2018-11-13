@@ -1,6 +1,6 @@
 {
   "name": "milkdrop-eel-parser",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "EEL2 Parser for Milkdrop Equations",
   "author": "Jordan Berg <jordannealberg@gmail.com>",
   "license": "MIT",
