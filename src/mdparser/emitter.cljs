@@ -36,7 +36,9 @@
    :band "band"
    :equal "equal"
    :above "above"
-   :below "below"})
+   :below "below"
+   ;ternary
+   :memcpy "memcpy"})
 
 (def funmapv1
   (into funmap {:rand "randint"}))
