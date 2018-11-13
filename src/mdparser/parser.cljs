@@ -27,7 +27,7 @@
    "
    PROGRAM     = STATEMENT+
    STATEMENT   = (ASSIGN <';'>) / ((loop | while | if | memcpy) <';'>?) / (bitexpr <';'>)
-   <INNER-STATEMENT> = ((ASSIGN | loop | while | if | exec3 | exec2 | bitexpr) <';'>) / ((ASSIGN | loop | while | if | exec3 | exec2 | bitexpr) !<';'>)
+   <INNER-STATEMENT> = ((ASSIGN | loop | while | if | memcpy | exec3 | exec2 | bitexpr) <';'>) / ((ASSIGN | loop | while | if | memcpy | exec3 | exec2 | bitexpr) !<';'>)
    ASSIGN      = lhs assign-op rhs
    exec3       = <'exec3'> lparen INNER-STATEMENT+ <comma> INNER-STATEMENT+ <comma> INNER-STATEMENT+ rparen
    exec2       = <'exec2'> lparen INNER-STATEMENT+ <comma> INNER-STATEMENT+ rparen
