@@ -1,6 +1,6 @@
 {
   "name": "milkdrop-eel-parser",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "EEL2 Parser for Milkdrop Equations",
   "author": "Jordan Berg <jordannealberg@gmail.com>",
   "license": "MIT",
@@ -14,6 +14,7 @@
     "release/md-parser.min.js"
   ],
   "scripts": {
-    "build": "lein cljsbuild once"
+    "build": "lein cljsbuild once",
+    "test": "lein cljsbuild test"
   }
 }
