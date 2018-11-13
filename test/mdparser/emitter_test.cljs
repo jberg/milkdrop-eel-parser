@@ -148,3 +148,8 @@
   (testing "case insensitive"
     (is (= (emitter/emit 2 (parser/parse "x = RAND(Y);"))
            "a['x']=rand(a['y']);"))))
+
+(deftest test-memcpy
+  (testing "memcpy"
+    (is (= (emitter/emit 2 (parser/parse "memcpy(10, 5, 5);"))
+           "memcpy(a['megabuf'], 10, 5, 5);"))))

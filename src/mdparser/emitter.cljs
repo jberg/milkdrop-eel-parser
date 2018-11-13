@@ -3,7 +3,6 @@
             [clojure.string]))
 
 ; freembuf
-; memcpy
 ; memset
 
 (def funmap
@@ -36,9 +35,7 @@
    :band "band"
    :equal "equal"
    :above "above"
-   :below "below"
-   ;ternary
-   :memcpy "memcpy"})
+   :below "below"})
 
 (def funmapv1
   (into funmap {:rand "randint"}))
@@ -190,6 +187,9 @@
                 "for(var " idx-var "=0;" idx-var "<" (emit version c "") ";" idx-var "++){"
                 (clojure.string/join " " (map #(emit version %) s))
                 "}"))
+      :memcpy (let [[& args] r
+                    as (clojure.string/join ", " (map #(emit version % "") args))]
+               (str "memcpy(a['megabuf'], " as ")" line-ending))
       (:bitwise
        :add-sub
        :mult-div) (let [[lhs-neg r] (remove-leading-negs r)

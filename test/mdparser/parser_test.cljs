@@ -294,3 +294,10 @@
            [:PROGRAM
              [:STATEMENT
                [:ASSIGN [:SYMBOL "x"] "=" [:add-sub [:SYMBOL "midvarname"] "+" [:NUMBER [:INTEGER "3"]]]]]]))))
+
+(deftest test-memcpy
+  (testing "memcpy"
+    (is (= (parser/parse "memcpy(10, 5, 5);")
+           [:PROGRAM
+             [:STATEMENT
+               [:memcpy [:NUMBER [:INTEGER "10"]] [:NUMBER [:INTEGER "5"]] [:NUMBER [:INTEGER "5"]]]]]))))
