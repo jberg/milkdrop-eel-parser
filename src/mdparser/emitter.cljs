@@ -1,6 +1,7 @@
 (ns mdparser.emitter
   (:require [clojure.set]
-            [clojure.string]))
+            [clojure.string]
+            [goog.object]))
 
 ; freembuf
 ; memset
@@ -259,3 +260,288 @@
                    (throw (ex-info (str "No function matching: " (first fname)) {}))
                    (str (when (and (or is-neg-top is-neg) (not (and is-neg-top is-neg))) "-")
                         f "(" as ")")))))))
+
+; from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/copyWithin#Polyfill
+(defn copyWithin
+  [arr dst src end]
+  (let [len (.-length arr)
+        relTarget (.floor js/Math dst)
+        to (if (< relTarget 0)
+             (.max js/Math (+ len relTarget) 0)
+             (.min js/Math relTarget len))
+        relStart (.floor js/Math src)
+        from (if (< relStart 0)
+               (.max js/Math (+ len relStart) 0)
+               (.min js/Math relStart len))
+        relEnd end
+        final (if (< relEnd 0)
+               (.max js/Math (+ len relEnd) 0)
+               (.min js/Math relEnd len))
+        count (.min js/Math (- final from) (- len to))
+        direction 1
+        [direction from to] (if (and (< from to)
+                                     (< to (+ from count)))
+                              [-1 (+ from (- count 1)) (+ to (- count 1))]
+                              [direction from to])]
+    (loop [from from
+           to to
+           count count]
+      (when (> count 0)
+        (do
+          (aset arr to (aget arr from))
+          (recur (+ from direction) (+ to direction) (- count 1)))))))
+
+(defn interp
+  ([version env l] (interp version env l ";"))
+  ([version env l line-ending]
+  (let [[f & r] l
+        return-last-thunk (fn [env statements]
+                            (if (> (count statements) 1)
+                              (reduce
+                                (fn [inner-env statement]
+                                  (interp version (get inner-env :env) statement line-ending))
+                                {:env env}
+                                statements)
+                              (interp version env (first statements) "")))]
+    (case f
+      :PROGRAM (reduce
+                 (fn [c v]
+                   (interp version (get c :env) v line-ending))
+                 {:env env}
+                 r)
+      :STATEMENT (interp version env (first r) line-ending)
+      :ASSIGN (let [[rhs-neg r] (if (> (count r) 3)
+                                       (remove-trailing-negs r)
+                                       [nil r])
+                    [lhs op rhs] r
+                    op-fun (fn [oldval currval]
+                             (case op
+                               "=" currval
+                               "+=" (+ oldval currval)
+                               "-=" (- oldval currval)
+                               "*=" (* oldval currval)
+                               "/=" (/ oldval currval)
+                               "%=" (mod oldval currval)
+                               :else (throw (ex-info (str "No operator matching: " op) {}))))
+                    rhsinterped (interp version env rhs line-ending)
+                    rhsval (rhsinterped :value)
+                    rhsval (if rhs-neg (* rhsval -1) rhsval)]
+                (case (first lhs)
+                  :SYMBOL (let [sname (correct-basevar (first (rest lhs)))
+                                oldval (goog.object/get env sname 0)
+                                newval (op-fun oldval rhsval)]
+                            (goog.object/set env sname newval)
+                            {:env env :value newval})
+                  :BUFFER (let [bufname (first (rest lhs))
+                                bufidxinterped (interp version env (second (rest lhs)) "")
+                                bufidxval (.floor js/Math (bufidxinterped :value))
+                                buf (goog.object/get env bufname)
+                                oldval (aget buf bufidxval 0)
+                                newval (op-fun oldval rhsval)]
+                            (aset buf bufidxval newval)
+                            {:env env :value newval})
+                  :else (throw (ex-info (str "No assign var matching: " lhs) {}))))
+      (:exec2 :exec3) (return-last-thunk env r)
+      :while {:env (loop [env env
+                          idx 100 ; any non-zero value to run first time
+                          count 0]
+                     (if (and (> (.abs js/Math idx) MDEPSILON)
+                              (< count 1048576))
+                       (let [interped (interp version env (first r) line-ending)]
+                         (recur (interped :env)
+                                (interped :value)
+                                (+ count 1)))
+                       env))}
+      :loop (let [[c comma & s] r
+                  interpedc (interp version env c "")]
+              {:env (loop [env (interpedc :env)
+                           idx 0
+                           n (interpedc :value)]
+                       (if (< idx n)
+                         (let [interpeds (reduce
+                                           #(interp version (%1 :env) %2 "")
+                                           {:env env}
+                                           s)]
+                           (recur (interpeds :env) (+ idx 1) n))
+                         env))})
+      :memcpy (let [[& args] r
+                    argvals (map #((interp version env % "") :value) args)
+                    [dst src len] argvals
+                    [dst src len] (if (< src 0)
+                                    [(- dst src) 0 (+ len src)]
+                                    [dst src len])
+                    [dst src len] (if (< dst 0)
+                                    [0 (- src dst) (+ len dst)]
+                                    [dst src len])]
+                (when (> len 0)
+                  (let [buf (goog.object/get env "megabuf")]
+                    (copyWithin buf dst src len)))
+                {:env env :value dst})
+      (:bitwise
+       :add-sub
+       :mult-div) (let [[lhs-neg r] (remove-leading-negs r)
+                        [rhs-neg r] (remove-trailing-negs r)
+                        [lhs op rhs] r
+                        lhsinterped (interp version env lhs "")
+                        rhsinterped (interp version env rhs "")
+                        lhsval (lhsinterped :value)
+                        rhsval (rhsinterped :value)
+                        lhsval (if lhs-neg (* lhsval -1) lhsval)
+                        rhsval (if rhs-neg (* rhsval -1) rhsval)]
+                    {:env env
+                     :value
+                       (case op
+                         "+" (+ lhsval rhsval)
+                         "-" (- lhsval rhsval)
+                         "*" (* lhsval rhsval)
+                         "/" (if (== rhsval 0)
+                               0
+                               (/ lhsval rhsval))
+                         "%" (if (== rhsval 0)
+                               0
+                               (mod (.floor js/Math lhsval) (.floor js/Math rhsval)))
+                         "&" (bit-and (.floor js/Math lhsval) (.floor js/Math rhsval))
+                         "|" (bit-or (.floor js/Math lhsval) (.floor js/Math rhsval))
+                         :else (throw (ex-info (str "No operator matching: " op) {})))})
+      :NUMBER (let [[is-neg r] (remove-leading-negs r)
+                    num ((interp version env (last r) "") :value)
+                    num (if is-neg (* num -1) num)]
+                {:env env :value num})
+      :DECIMAL {:env env
+                :value
+                  (js/parseFloat
+                    (if (== (count r) 3)
+                      (let [[lhs _ rhs] r]
+                        (trim-leading-zero (str lhs "." rhs)))
+                      (let [[lhs rhs] r]
+                        (if (= lhs ".")
+                          (str "0." rhs)
+                          (trim-leading-zero (str lhs ".0"))))))}
+      :INTEGER {:env env :value (js/parseInt (trim-leading-zero (str (first r))))}
+      :SYMBOL (let [[is-neg r] (remove-leading-negs r)
+                    sname (correct-basevar (last r))
+                    symval (goog.object/get env sname 0)
+                    symval (if is-neg (* symval -1) symval)]
+                {:env env :value symval})
+      :BUFFER (let [[is-neg r] (remove-leading-negs r)
+                    bufname (first r)
+                    bufidxinterped (interp version env (second r) "")
+                    bufidxval (.floor js/Math (bufidxinterped :value))
+                    bufval (aget (goog.object/get (bufidxinterped :env) bufname) bufidxval)
+                    bufval (if is-neg (* -1 bufval) bufval)]
+                {:env env :value bufval})
+      :cond (let [[lhs c rhs] r
+                  lhsinterped (interp version env lhs "")
+                  rhsinterped (interp version env rhs "")
+                  lhsval (lhsinterped :value)
+                  rhsval (rhsinterped :value)
+                  op (last c)]
+              {:env env
+               :value (case op
+                        ">" (int (> lhsval rhsval))
+                        "<" (int (< lhsval rhsval))
+                        ">=" (int (>= lhsval rhsval))
+                        "<=" (int (<= lhsval rhsval))
+                        "&&" (int (and lhsval rhsval))
+                        "||" (int (or lhsval rhsval))
+                        "==" (if (< (.abs js/Math (- lhsval rhsval)) MDEPSILON) 1 0)
+                        "!=" (if (< (.abs js/Math (- lhsval rhsval)) MDEPSILON) 0 1)
+                        :else (throw (ex-info (str "No operator matching: " op) {})))})
+      :if (let [[is-neg r] (remove-leading-negs r)
+                [c t f] (filterv #(not (= % '([:comma]))) (partition-by #(= % [:comma]) r))
+                condinterped (interp 2 env (first c) "")
+                condval (condinterped :value)]
+            (if (> (.abs js/Math condval) MDEPSILON)
+              (let [tinterped (return-last-thunk env t)
+                    tval (tinterped :value)
+                    tval (if is-neg (* tval -1) tval)]
+                {:env (tinterped :env) :value tval})
+              (let [finterped (return-last-thunk env f)
+                    fval (finterped :value)
+                    fval (if is-neg (* fval -1) fval)]
+                {:env (finterped :env) :value fval})))
+      :funcall (let [[is-neg-top r] (remove-leading-negs r)
+                     [fname & args] r
+                     [is-neg fname] (remove-leading-negs (rest fname))
+                     fname (keyword (clojure.string/lower-case (first fname)))]
+                 (case fname
+                   ; unary functions
+                   (:int :floor :abs
+                    :exp :sqr :sqrt
+                    :sin :cos :tan
+                    :asin :acos :atan
+                    :log :log10 :sign
+                    :rand :bnot) (let [arg (first args)
+                                       interpedarg (interp 2 env arg "")
+                                       argval (interpedarg :value)]
+                                   {:env (interpedarg :env)
+                                    :value (case fname
+                                             :int (.floor js/Math argval)
+                                             :floor (.floor js/Math argval)
+                                             :abs (.abs js/Math argval)
+                                             :exp (.exp js/Math argval)
+                                             :sqr (* argval argval)
+                                             :sqrt (.sqrt js/Math (.abs js/Math argval))
+                                             :sin (.sin js/Math argval)
+                                             :cos (.cos js/Math argval)
+                                             :tan (.tan js/Math argval)
+                                             :asin (.asin js/Math argval)
+                                             :acos (.acos js/Math argval)
+                                             :atan (.atan js/Math argval)
+                                             :log (.log js/Math argval)
+                                             :log10 (* (.log js/Math argval) (.-LOG10E js/Math))
+                                             :sign (if (> argval 0)
+                                                     1
+                                                     (if (< argval 0)
+                                                       -1
+                                                       0))
+                                             :rand (let [xf (.floor js/Math argval)
+                                                         resultval (if (< xf 1)
+                                                                     (.random js/Math)
+                                                                     (* (.random js/Math) xf))]
+                                                     (if (== version 1)
+                                                       (.floor js/Math resultval)
+                                                       resultval))
+                                             :bnot (if (< (.abs js/Math argval) MDEPSILON) 1 0)
+                                             :else (throw (ex-info (str "No matching token for unary funcall: " fname) {})))})
+                   ; binary functions
+                   (:equal :above :below
+                    :pow :min :max
+                    :atan2 :sigmoid
+                    :bor :band) (let [firstarg (first args)
+                                      interpedfirstarg (interp 2 env firstarg "")
+                                      firstargval (interpedfirstarg :value)
+                                      secondarg (second args)
+                                      interpedsecondarg (interp 2 (interpedfirstarg :env) secondarg "")
+                                      secondargval (interpedsecondarg :value)
+                                      resultval (case fname
+                                                  :equal (if (< (.abs js/Math (- firstargval secondargval))
+                                                                MDEPSILON) 1 0)
+                                                  :above (if (> firstargval secondargval) 1 0)
+                                                  :below (if (< firstargval secondargval) 1 0)
+                                                  :pow (let [result (.pow js/Math firstargval secondargval)]
+                                                        (if (not (and (js/isFinite result)
+                                                                      (not (js/isNaN result))))
+                                                          0
+                                                          result))
+                                                  :min (.min js/Math firstargval secondargval)
+                                                  :max (.max js/Math firstargval secondargval)
+                                                  :atan2 (.atan2 js/Math firstargval secondargval)
+                                                  :sigmoid (let [t (+ 1 (.exp js/Math (- firstargval) secondargval))]
+                                                             (if (> (.abs js/Math t) MDEPSILON)
+                                                               (/ 1.0 t)
+                                                               0))
+                                                  :bor (if (or (> (.abs js/Math firstargval) MDEPSILON)
+                                                               (> (.abs js/Math secondargval) MDEPSILON))
+                                                         1
+                                                         0)
+                                                  :band (if (and (> (.abs js/Math firstargval) MDEPSILON)
+                                                                 (> (.abs js/Math secondargval) MDEPSILON))
+                                                         1
+                                                         0)
+                                                  :else (throw (ex-info (str "No matching token for binary funcall: " fname) {})))
+                                        resultval (if (and (or is-neg-top is-neg) (not (and is-neg-top is-neg))) (* resultval -1) resultval)]
+                                  {:env (interpedsecondarg :env)
+                                   :value resultval})
+                   :else (throw (ex-info (str "No matching token for funcall: " fname) {}))))
+      :else (throw (ex-info (str "No matching token for interp: " f) {}))))))

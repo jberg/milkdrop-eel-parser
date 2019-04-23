@@ -3,7 +3,8 @@
             [mdparser-test.parser]
             [mdparser-test.emitter]
             [mdparser-test.analyzer]
-            [mdparser-test.eval]))
+            [mdparser-test.eval]
+            [mdparser-test.interp]))
 
 (enable-console-print!)
 
@@ -14,5 +15,6 @@
   (run-tests 'mdparser-test.parser
              'mdparser-test.emitter
              'mdparser-test.analyzer
-             'mdparser-test.eval)
+             'mdparser-test.eval
+             'mdparser-test.interp)
   success)

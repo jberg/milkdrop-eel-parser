@@ -1,9 +1,9 @@
 (defproject mdparser "0.1.0-SNAPSHOT"
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.946"]
-                 [instaparse "1.4.8"]]
+  :dependencies [[org.clojure/clojure "1.10.1-beta2"]
+                 [org.clojure/clojurescript "1.10.520"]
+                 [instaparse "1.4.10"]]
   :plugins [[lein-cljsbuild "1.1.7"]
-            [lein-figwheel "0.5.15"]]
+            [lein-figwheel "0.5.18"]]
   :source-paths ["src" "script"]
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
   :cljsbuild {:builds

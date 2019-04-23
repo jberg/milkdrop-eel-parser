@@ -118,3 +118,7 @@
       :perPixelEQs per-pixel-eqs
       :shapes shapesMap
       :waves wavesMap})))
+
+(defn ^:export interpret
+  [version env parse]
+  ((emitter/interp version env parse) :env))
