@@ -119,6 +119,61 @@
       :shapes shapesMap
       :waves wavesMap})))
 
+(defn ^:export make-shape-parse-map
+  [version s]
+  (let [init_eqs_str (goog.object/get s "init_eqs_eel_str")
+        frame_eqs_str (goog.object/get s "frame_eqs_eel_str")
+        per-frame-init-parse (when (seq init_eqs_str) (parser/parse init_eqs_str))
+        per-frame-parse (when (seq frame_eqs_str) (parser/parse frame_eqs_str))]
+    (js-obj
+      "init_eqs_eel_parse" per-frame-init-parse
+      "frame_eqs_eel_parse" per-frame-parse)))
+
+(defn make-shapes-parse-map
+  [version s]
+  (if (seq s)
+    (apply array
+            (mapv (fn [x]
+              (make-shape-parse-map version x))
+            s))
+    (array)))
+
+(defn ^:export make-wave-parse-map
+  [version s]
+  (let [init_eqs_str (goog.object/get s "init_eqs_eel_str")
+        frame_eqs_str (goog.object/get s "frame_eqs_eel_str")
+        point_eqs_str (goog.object/get s "point_eqs_eel_str")
+        per-frame-init-parse (when (seq init_eqs_str) (parser/parse init_eqs_str))
+        per-frame-parse (when (seq frame_eqs_str) (parser/parse frame_eqs_str))
+        per-point-parse (when (seq point_eqs_str) (parser/parse point_eqs_str))]
+    (js-obj
+      "init_eqs_eel_parse" per-frame-init-parse
+      "frame_eqs_eel_parse" per-frame-parse
+      "point_eqs_eel_parse" per-point-parse)))
+
+(defn make-waves-parse-map
+  [version s]
+  (if (seq s)
+    (apply array
+      (mapv (fn [x]
+            (make-wave-parse-map version x))
+          s))
+    (array)))
+
+(defn ^:export parse_preset_wave_and_shape
+  [version init-eqs-str frame-eqs-str pixel-eqs-str shapes waves]
+  (let [per-frame-init-parse (when init-eqs-str (parser/parse init-eqs-str))
+        per-frame-parse (when frame-eqs-str (parser/parse frame-eqs-str))
+        per-pixel-parse (when pixel-eqs-str (parser/parse pixel-eqs-str))
+        shapesMap (make-shapes-parse-map version shapes)
+        wavesMap (make-waves-parse-map version waves)]
+    (js-obj
+      "init_eqs_eel_parse" per-frame-init-parse
+      "frame_eqs_eel_parse" per-frame-parse
+      "pixel_eqs_eel_parse" per-pixel-parse
+      "shapes" shapesMap
+      "waves" wavesMap)))
+
 (defn ^:export interpret
   [version env parse]
   ((emitter/interp version env parse) :env))
